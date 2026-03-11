@@ -13,6 +13,8 @@ interface LeaveSummaryProps {
   year: string;
   stats: LeaveStat[];
   onApplyLeave?: () => void;
+  hideApplyButton?: boolean;
+  actionSlot?: React.ReactNode;
 }
 
 export function LeaveSummary({
@@ -20,6 +22,8 @@ export function LeaveSummary({
   year,
   stats,
   onApplyLeave,
+  hideApplyButton,
+  actionSlot,
 }: LeaveSummaryProps) {
   return (
     <Card className="h-full">
@@ -41,9 +45,12 @@ export function LeaveSummary({
           ))}
         </div>
 
-        <Button variant="outline" className="w-full" onClick={onApplyLeave}>
-          Apply New Leave
-        </Button>
+        {!hideApplyButton && (
+          <Button variant="outline" className="w-full" onClick={onApplyLeave}>
+            Apply New Leave
+          </Button>
+        )}
+        {actionSlot}
       </CardContent>
     </Card>
   );

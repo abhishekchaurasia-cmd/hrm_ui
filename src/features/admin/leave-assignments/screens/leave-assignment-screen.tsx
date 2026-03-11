@@ -5,6 +5,7 @@ import { Plus, Trash2, UserCheck } from 'lucide-react';
 import { useEffect, useState, useCallback } from 'react';
 import { toast } from 'sonner';
 
+import { EmployeeSelect } from '@/components/employee-select';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -231,11 +232,11 @@ export function LeaveAssignmentScreen() {
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Employee ID</Label>
-              <Input
-                placeholder="Enter employee UUID"
+              <Label>Employee</Label>
+              <EmployeeSelect
                 value={form.userId}
-                onChange={e => setForm(p => ({ ...p, userId: e.target.value }))}
+                onValueChange={v => setForm(p => ({ ...p, userId: v }))}
+                placeholder="Select employee..."
               />
             </div>
             <div className="space-y-2">

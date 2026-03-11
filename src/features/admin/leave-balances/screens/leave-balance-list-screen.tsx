@@ -1,11 +1,12 @@
 'use client';
 
 import axios from 'axios';
-import { Wallet, Search, SlidersHorizontal } from 'lucide-react';
+import { Wallet, SlidersHorizontal } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useCallback } from 'react';
 import { toast } from 'sonner';
 
+import { EmployeeSelect } from '@/components/employee-select';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -141,18 +142,14 @@ export function LeaveBalanceListScreen() {
               />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs">Employee ID</Label>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Filter by employee UUID"
-                  className="w-72"
-                  value={filterUserId}
-                  onChange={e => setFilterUserId(e.target.value)}
-                />
-                <Button size="icon" variant="outline" onClick={fetchBalances}>
-                  <Search className="size-4" />
-                </Button>
-              </div>
+              <Label className="text-xs">Employee</Label>
+              <EmployeeSelect
+                value={filterUserId}
+                onValueChange={setFilterUserId}
+                placeholder="All employees"
+                allowClear
+                className="w-72"
+              />
             </div>
           </div>
         </CardContent>

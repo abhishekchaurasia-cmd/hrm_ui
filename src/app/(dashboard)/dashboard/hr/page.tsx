@@ -1,5 +1,5 @@
-import { HrDashboardScreen } from '@/features/hr-dashboard';
+import { redirect } from 'next/navigation';
 
 export default function HrDashboardPage() {
-  return <HrDashboardScreen />;
+  redirect('/dashboard');
 }

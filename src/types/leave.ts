@@ -135,3 +135,72 @@ export interface YearEndProcessingDto {
   processingYear: number;
   newYear: number;
 }
+
+// Employee portal types
+
+export type LeaveRequestStatus =
+  | 'pending'
+  | 'approved'
+  | 'rejected'
+  | 'cancelled';
+
+export interface LeaveRequest {
+  id: string;
+  userId: string;
+  leaveType: string | null;
+  leaveTypeConfigId: string | null;
+  leaveTypeConfig?: {
+    id: string;
+    name: string;
+    code: string;
+  };
+  user?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
+  startDate: string;
+  endDate: string;
+  numberOfDays: number;
+  reason: string | null;
+  isHalfDay: boolean;
+  halfDayType: HalfDayType | null;
+  status: LeaveRequestStatus;
+  reviewedBy: string | null;
+  reviewNote: string | null;
+  reviewedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type HalfDayType = 'first_half' | 'second_half';
+
+export interface ApplyLeavePayload {
+  leaveTypeConfigId: string;
+  startDate: string;
+  endDate: string;
+  reason?: string;
+  isHalfDay?: boolean;
+  halfDayType?: HalfDayType;
+}
+
+export interface AvailableLeaveType {
+  id: string;
+  name: string;
+  code: string;
+  quota: number | null;
+  isUnlimited: boolean;
+  isPaid: boolean;
+  balance: number;
+  used: number;
+  allocated: number;
+  carriedForward: number;
+}
+
+export interface AvailableLeaveTypesResponse {
+  planName: string | null;
+  planId: string | null;
+  year: number;
+  leaveTypes: AvailableLeaveType[];
+}
