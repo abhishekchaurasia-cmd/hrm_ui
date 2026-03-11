@@ -21,7 +21,8 @@ export default function DashboardLayout({
 
     if (
       (pathname.startsWith('/dashboard/hr') ||
-        pathname.startsWith('/dashboard/admin')) &&
+        pathname.startsWith('/dashboard/admin') ||
+        pathname.startsWith('/settings')) &&
       session.user.role !== 'hr'
     ) {
       router.replace('/dashboard');

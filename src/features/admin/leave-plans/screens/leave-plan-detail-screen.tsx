@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState, useCallback } from 'react';
 import { toast } from 'sonner';
 
+import { EmployeeSelect } from '@/components/employee-select';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -711,18 +712,16 @@ export function LeavePlanDetailScreen({ planId }: LeavePlanDetailScreenProps) {
           <DialogHeader>
             <DialogTitle>Assign Employee to Plan</DialogTitle>
             <DialogDescription>
-              Enter the employee ID and effective dates.
+              Select an employee and set the effective dates.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Employee ID</Label>
-              <Input
-                placeholder="Enter employee UUID"
+              <Label>Employee</Label>
+              <EmployeeSelect
                 value={assignForm.userId}
-                onChange={e =>
-                  setAssignForm(p => ({ ...p, userId: e.target.value }))
-                }
+                onValueChange={v => setAssignForm(p => ({ ...p, userId: v }))}
+                placeholder="Select employee..."
               />
             </div>
             <div className="grid grid-cols-2 gap-4">

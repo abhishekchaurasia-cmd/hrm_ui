@@ -5,6 +5,10 @@ import Link from 'next/link';
 
 import { Button } from '@/components/ui/button';
 
+interface AttendanceHeaderProps {
+  showApplyLeave?: boolean;
+}
+
 function getCurrentMonthYear(): string {
   return new Date().toLocaleDateString('en-US', {
     month: 'short',
@@ -12,7 +16,9 @@ function getCurrentMonthYear(): string {
   });
 }
 
-export function AttendanceHeader() {
+export function AttendanceHeader({
+  showApplyLeave = true,
+}: AttendanceHeaderProps) {
   return (
     <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
       <div>
@@ -35,13 +41,15 @@ export function AttendanceHeader() {
           <Calendar className="size-3.5" />
           {getCurrentMonthYear()}
         </Button>
-        <Button
-          size="sm"
-          className="gap-1.5 bg-orange-500 text-white hover:bg-orange-600"
-        >
-          <Plus className="size-3.5" />
-          Apply Leave
-        </Button>
+        {showApplyLeave && (
+          <Button
+            size="sm"
+            className="gap-1.5 bg-orange-500 text-white hover:bg-orange-600"
+          >
+            <Plus className="size-3.5" />
+            Apply Leave
+          </Button>
+        )}
       </div>
     </div>
   );

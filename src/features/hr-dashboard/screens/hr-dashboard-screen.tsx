@@ -2,27 +2,39 @@
 
 import {
   AlertTriangle,
+  ArrowRight,
   CircleCheck,
   Clock3,
   FileWarning,
   UserCheck,
   Users,
 } from 'lucide-react';
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 import {
+  AttendanceFollowupSection,
   AttendanceStatus,
+  LateArrivalsAlerts,
   OverviewStats,
 } from '@/components/attendance-dashboard';
-import {
-  LeaveSummary,
-  PageHeader,
-  ProfileCard,
-} from '@/components/employee-dashboard';
+import { LeaveSummary, PageHeader } from '@/components/employee-dashboard';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import service, { HttpMethod } from '@/services/http';
 
 import type { AttendanceStatusItem } from '@/components/attendance-dashboard/attendance-status';
+import type { SummaryItem } from '@/components/attendance-dashboard/attendance-summary';
+import type { LateArrivalItem } from '@/components/attendance-dashboard/late-arrival-row';
 import type { OverviewStatItem } from '@/components/attendance-dashboard/overview-stats';
 
 interface HrTodayEmployeeAttendance {
@@ -58,6 +70,22 @@ interface LeavesResponse {
   data: LeaveRequest[];
 }
 
+const AVATAR_COLORS = [
+  '#b45309',
+  '#dc2626',
+  '#64748b',
+  '#0891b2',
+  '#7c3aed',
+  '#059669',
+  '#d97706',
+];
+
+const EXPECTED_DAILY_MINUTES = 9 * 60;
+
+function getInitials(first: string, last: string): string {
+  return `${first.charAt(0)}${last.charAt(0)}`.toUpperCase();
+}
+
 function formatTime(dateString: string | null): string {
   if (!dateString) return '--';
   return new Date(dateString).toLocaleTimeString('en-US', {
@@ -72,6 +100,21 @@ function formatTotalHours(totalMinutes: number | null): string {
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
   return `${hours}h ${String(minutes).padStart(2, '0')}m`;
+}
+
+function getStatusBadgeVariant(
+  status: HrTodayEmployeeAttendance['status']
+): 'success' | 'warning' | 'destructive' | 'secondary' {
+  if (status === 'present') return 'success';
+  if (status === 'late' || status === 'half_day') return 'warning';
+  if (status === 'absent') return 'destructive';
+  return 'secondary';
+}
+
+function getStatusLabel(status: HrTodayEmployeeAttendance['status']): string {
+  if (status === 'half_day') return 'Half Day';
+  if (status === null) return 'Not Marked';
+  return status.charAt(0).toUpperCase() + status.slice(1);
 }
 
 function computeOverviewStats(
@@ -173,6 +216,59 @@ function computeLeaveStats(
   ];
 }
 
+function computeLateArrivals(
+  employees: HrTodayEmployeeAttendance[]
+): LateArrivalItem[] {
+  return employees
+    .filter(e => e.status === 'late')
+    .map((e, idx) => ({
+      name: `${e.firstName} ${e.lastName}`,
+      role: e.role === 'hr' ? 'HR' : 'Employee',
+      checkIn: formatTime(e.punchInAt),
+      avatarBg: AVATAR_COLORS[idx % AVATAR_COLORS.length],
+      initials: getInitials(e.firstName, e.lastName),
+      level: Math.min(7, Math.max(1, idx + 3)),
+    }));
+}
+
+function computeSummaryItems(
+  employees: HrTodayEmployeeAttendance[]
+): SummaryItem[] {
+  const checkedIn = employees.filter(e => e.punchInAt !== null).length;
+  const checkedOut = employees.filter(e => e.punchOutAt !== null).length;
+
+  const punchInTimes = employees
+    .filter(e => e.punchInAt !== null)
+    .map(e => new Date(e.punchInAt!).getTime());
+
+  let avgCheckIn = '--';
+  if (punchInTimes.length > 0) {
+    const avg = punchInTimes.reduce((a, b) => a + b, 0) / punchInTimes.length;
+    avgCheckIn = new Date(avg).toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    });
+  }
+
+  return [
+    { value: checkedIn.toLocaleString(), label: 'Check-in Count' },
+    { value: checkedOut.toLocaleString(), label: 'Check-out Count' },
+    { value: avgCheckIn, label: 'Avg Check-in Time' },
+  ];
+}
+
+function computeAvgWorkingPercent(
+  employees: HrTodayEmployeeAttendance[]
+): number {
+  const withMinutes = employees.filter(e => e.totalMinutes !== null);
+  if (withMinutes.length === 0) return 0;
+  const avgMinutes =
+    withMinutes.reduce((s, e) => s + (e.totalMinutes ?? 0), 0) /
+    withMinutes.length;
+  return (avgMinutes / EXPECTED_DAILY_MINUTES) * 100;
+}
+
 export function HrDashboardScreen() {
   const [employees, setEmployees] = useState<HrTodayEmployeeAttendance[]>([]);
   const [leaves, setLeaves] = useState<LeaveRequest[]>([]);
@@ -221,17 +317,12 @@ export function HrDashboardScreen() {
   const overviewStats = computeOverviewStats(employees);
   const statusData = computeStatusData(employees);
   const leaveStats = computeLeaveStats(leaves);
-  const pendingCount = leaves.filter(l => l.status === 'pending').length;
-
-  const totalEmployees = employees.length;
-  const presentCount = employees.filter(
-    e =>
-      e.status === 'present' || e.status === 'late' || e.status === 'half_day'
+  const lateArrivals = computeLateArrivals(employees);
+  const summaryItems = computeSummaryItems(employees);
+  const avgWorkingPercent = computeAvgWorkingPercent(employees);
+  const missingPunchCount = employees.filter(
+    e => e.punchInAt !== null && e.punchOutAt === null
   ).length;
-  const attendanceRate =
-    totalEmployees > 0
-      ? ((presentCount / totalEmployees) * 100).toFixed(1)
-      : '0';
 
   return (
     <div className="flex flex-col gap-5">
@@ -255,90 +346,112 @@ export function HrDashboardScreen() {
         <>
           <OverviewStats items={overviewStats} />
 
-          <div className="grid gap-5 lg:grid-cols-[1.5fr_1fr]">
-            <LeaveSummary
-              title="Leave Actions"
-              year={new Date().getFullYear().toString()}
-              stats={leaveStats}
-            />
-            <ProfileCard
-              name="HR Operations"
-              role="Team Snapshot"
-              avatar="H"
-              details={[
-                {
-                  label: 'Total Employees',
-                  value: totalEmployees.toLocaleString(),
-                },
-                {
-                  label: 'Present Today',
-                  value: presentCount.toLocaleString(),
-                },
-                { label: 'Pending Approvals', value: String(pendingCount) },
-                { label: 'Attendance Rate', value: `${attendanceRate}%` },
-              ]}
-            />
-          </div>
-
-          <div className="grid gap-5 lg:grid-cols-[1fr_1.2fr]">
+          <div className="grid gap-5 lg:grid-cols-[2fr_1fr]">
+            <LateArrivalsAlerts items={lateArrivals} />
             <AttendanceStatus
               statusData={statusData}
-              totalWorkingDays={totalEmployees}
+              totalWorkingDays={employees.length}
             />
           </div>
 
+          <LeaveSummary
+            title="Leave Overview"
+            year={new Date().getFullYear().toString()}
+            stats={leaveStats}
+            hideApplyButton
+            actionSlot={
+              <Button asChild variant="outline" className="w-full gap-2">
+                <Link href="/dashboard/admin/leave-requests">
+                  View All Requests
+                  <ArrowRight className="size-4" />
+                </Link>
+              </Button>
+            }
+          />
+
+          <AttendanceFollowupSection
+            lateArrivalCount={lateArrivals.length}
+            missingPunchCount={missingPunchCount}
+            summaryItems={summaryItems}
+            avgWorkingHoursPercent={avgWorkingPercent}
+          />
+
           <Card>
-            <CardHeader>
+            <CardHeader className="flex-row items-center justify-between">
               <CardTitle>
                 Today&apos;s Attendance {workDate ? `(${workDate})` : ''}
               </CardTitle>
+              <Button asChild variant="outline" size="sm" className="gap-1.5">
+                <Link href="/dashboard/attendance">
+                  View Details
+                  <ArrowRight className="size-3.5" />
+                </Link>
+              </Button>
             </CardHeader>
             <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-muted-foreground border-b text-left">
-                      <th className="px-2 py-2">Employee</th>
-                      <th className="px-2 py-2">Punch In</th>
-                      <th className="px-2 py-2">Punch Out</th>
-                      <th className="px-2 py-2">Total Hours</th>
-                      <th className="px-2 py-2">Status</th>
-                      <th className="px-2 py-2">Shift</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {employees.map(employee => (
-                      <tr key={employee.id} className="border-b">
-                        <td className="px-2 py-2">
-                          <div className="font-medium">
-                            {employee.firstName} {employee.lastName}
+              {employees.length === 0 ? (
+                <p className="text-muted-foreground py-6 text-center text-sm">
+                  No attendance records for today.
+                </p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Employee</TableHead>
+                      <TableHead>Punch In</TableHead>
+                      <TableHead>Punch Out</TableHead>
+                      <TableHead>Total Hours</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {employees.map((employee, idx) => (
+                      <TableRow key={employee.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <span
+                              className="inline-flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white"
+                              style={{
+                                backgroundColor:
+                                  AVATAR_COLORS[idx % AVATAR_COLORS.length],
+                              }}
+                            >
+                              {getInitials(
+                                employee.firstName,
+                                employee.lastName
+                              )}
+                            </span>
+                            <div>
+                              <p className="text-sm font-medium">
+                                {employee.firstName} {employee.lastName}
+                              </p>
+                              <p className="text-muted-foreground text-xs">
+                                {employee.email}
+                              </p>
+                            </div>
                           </div>
-                          <div className="text-muted-foreground text-xs">
-                            {employee.email}
-                          </div>
-                        </td>
-                        <td className="px-2 py-2">
+                        </TableCell>
+                        <TableCell className="text-sm">
                           {formatTime(employee.punchInAt)}
-                        </td>
-                        <td className="px-2 py-2">
+                        </TableCell>
+                        <TableCell className="text-sm">
                           {formatTime(employee.punchOutAt)}
-                        </td>
-                        <td className="px-2 py-2">
+                        </TableCell>
+                        <TableCell className="text-sm">
                           {formatTotalHours(employee.totalMinutes)}
-                        </td>
-                        <td className="px-2 py-2 capitalize">
-                          {employee.status ?? 'not marked'}
-                        </td>
-                        <td className="text-muted-foreground px-2 py-2 text-xs">
-                          {employee.shiftId
-                            ? employee.shiftId.slice(0, 8) + '...'
-                            : '—'}
-                        </td>
-                      </tr>
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={getStatusBadgeVariant(employee.status)}
+                          >
+                            {getStatusLabel(employee.status)}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
-              </div>
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         </>

@@ -1,5 +1,7 @@
 import { Star } from 'lucide-react';
+import Link from 'next/link';
 
+import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 
 interface ProfileCardProps {
@@ -8,6 +10,7 @@ interface ProfileCardProps {
   avatar?: string;
   rating?: boolean;
   details: { label: string; value: string }[];
+  profileHref?: string;
 }
 
 export function ProfileCard({
@@ -16,6 +19,7 @@ export function ProfileCard({
   avatar,
   rating,
   details,
+  profileHref,
 }: ProfileCardProps) {
   return (
     <Card className="h-full">
@@ -43,6 +47,13 @@ export function ProfileCard({
             </div>
           ))}
         </div>
+        {profileHref ? (
+          <div className="mt-5">
+            <Button asChild size="sm" variant="outline" className="w-full">
+              <Link href={profileHref}>Manage Profile</Link>
+            </Button>
+          </div>
+        ) : null}
       </CardContent>
     </Card>
   );
