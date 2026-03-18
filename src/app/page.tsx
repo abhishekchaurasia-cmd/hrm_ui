@@ -1,30 +1,42 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
 import { useEffect } from 'react';
 
+import { LandingScreen } from '@/features/landing/screens/landing-screen';
+import { useAuth } from '@/hooks/use-auth';
+
 export default function Home() {
-  const { data: session, status } = useSession();
+  const { isAuthenticated, isLoading, user } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (status === 'loading') return;
+    if (isLoading) return;
 
-    if (session?.user) {
-      if (session.user.role === 'hr') {
+    if (isAuthenticated && user) {
+      if (user.role === 'hr') {
         router.replace('/dashboard/hr');
         return;
       }
       router.replace('/dashboard');
-    } else {
-      router.replace('/login');
     }
-  }, [session, status, router]);
+  }, [isAuthenticated, isLoading, user, router]);
 
-  return (
-    <div className="flex min-h-screen items-center justify-center">
-      <p className="text-muted-foreground">Redirecting...</p>
-    </div>
-  );
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
+    );
+  }
+
+  if (isAuthenticated) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <p className="text-muted-foreground">Redirecting...</p>
+      </div>
+    );
+  }
+
+  return <LandingScreen />;
 }
