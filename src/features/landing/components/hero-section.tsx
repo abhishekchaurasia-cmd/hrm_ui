@@ -8,9 +8,10 @@ import {
   Shield,
   Users,
 } from 'lucide-react';
-import Link from 'next/link';
 
 import { Button } from '@/components/ui/button';
+
+import type { LoginMode } from './login-dialog';
 
 function DashboardIllustration() {
   return (
@@ -132,7 +133,11 @@ function DashboardIllustration() {
   );
 }
 
-export function HeroSection() {
+interface HeroSectionProps {
+  onLoginClick: (mode: LoginMode) => void;
+}
+
+export function HeroSection({ onLoginClick }: HeroSectionProps) {
   return (
     <section className="relative overflow-hidden pt-32 pb-20 lg:pt-40 lg:pb-28">
       {/* Background decoration */}
@@ -169,16 +174,18 @@ export function HeroSection() {
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Button
                 size="lg"
-                asChild
                 className="bg-orange-500 text-white hover:bg-orange-600"
+                onClick={() => onLoginClick('employee')}
               >
-                <Link href="/login">
-                  Employee Login
-                  <ArrowRight className="size-4" />
-                </Link>
+                Employee Login
+                <ArrowRight className="size-4" />
               </Button>
-              <Button size="lg" variant="outline" asChild>
-                <Link href="/hr-login">HR Login</Link>
+              <Button
+                size="lg"
+                variant="outline"
+                onClick={() => onLoginClick('hr')}
+              >
+                HR Login
               </Button>
             </div>
 

@@ -115,3 +115,24 @@ export async function rejectLeaveRequest(
   });
   return res.data as ApiResponse<LeaveRequest>;
 }
+
+export interface TeamOnLeaveMember {
+  userId: string;
+  firstName: string;
+  lastName: string;
+  leaveType: string | null;
+  leaveTypeName: string | null;
+  startDate: string;
+  endDate: string;
+  isHalfDay: boolean;
+}
+
+export async function getTeamOnLeave(): Promise<
+  ApiResponse<TeamOnLeaveMember[]>
+> {
+  const res = await service({
+    method: HttpMethod.GET,
+    url: '/api/v1/leaves/team-on-leave',
+  });
+  return res.data as ApiResponse<TeamOnLeaveMember[]>;
+}

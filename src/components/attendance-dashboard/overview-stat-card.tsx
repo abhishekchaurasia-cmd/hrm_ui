@@ -1,5 +1,4 @@
 import { Card, CardContent } from '@/components/ui/card';
-import { cn } from '@/lib/utils';
 
 import type { LucideIcon } from 'lucide-react';
 
@@ -15,39 +14,25 @@ interface OverviewStatCardProps {
 export function OverviewStatCard({
   title,
   value,
-  delta,
-  direction,
   icon: Icon,
   iconBg,
 }: OverviewStatCardProps) {
   return (
-    <Card className="py-0">
-      <CardContent className="flex items-center justify-between p-4">
-        <div>
-          <p className="text-muted-foreground text-xs">{title}</p>
-          <div className="mt-1 flex items-center gap-2">
-            <p className="text-2xl leading-none font-bold">{value}</p>
-            <span
-              className={cn(
-                'rounded px-1.5 py-0.5 text-[11px] font-semibold',
-                direction === 'up'
-                  ? 'bg-emerald-500/20 text-emerald-400'
-                  : 'bg-red-500/20 text-red-400'
-              )}
-            >
-              {direction === 'up' ? '↑' : '↓'} {delta}
-            </span>
-            <span className="text-muted-foreground text-[11px]">
-              vs yesterday
-            </span>
-          </div>
-        </div>
-
+    <Card className="py-0 transition-shadow hover:shadow-md">
+      <CardContent className="flex items-center gap-4 p-4">
         <div
-          className="flex size-10 shrink-0 items-center justify-center rounded-full"
-          style={{ backgroundColor: iconBg }}
+          className="flex size-11 shrink-0 items-center justify-center rounded-xl"
+          style={{ backgroundColor: `${iconBg}18` }}
         >
-          <Icon className="size-4 text-white" />
+          <Icon className="size-5" style={{ color: iconBg }} />
+        </div>
+        <div className="min-w-0">
+          <p className="text-muted-foreground truncate text-xs font-medium">
+            {title}
+          </p>
+          <p className="mt-0.5 text-2xl leading-none font-bold tracking-tight">
+            {value}
+          </p>
         </div>
       </CardContent>
     </Card>

@@ -8,7 +8,13 @@ import { ThemeToggle } from '@/components/header/theme-toggle';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
-export function LandingNavbar() {
+import type { LoginMode } from './login-dialog';
+
+interface LandingNavbarProps {
+  onLoginClick: (mode: LoginMode) => void;
+}
+
+export function LandingNavbar({ onLoginClick }: LandingNavbarProps) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -51,14 +57,14 @@ export function LandingNavbar() {
         {/* Desktop nav */}
         <nav className="hidden items-center gap-2 sm:flex">
           <ThemeToggle />
-          <Button variant="ghost" asChild>
-            <Link href="/hr-login">HR Login</Link>
+          <Button variant="ghost" onClick={() => onLoginClick('hr')}>
+            HR Login
           </Button>
           <Button
-            asChild
             className="bg-orange-500 text-white hover:bg-orange-600"
+            onClick={() => onLoginClick('employee')}
           >
-            <Link href="/login">Employee Login</Link>
+            Employee Login
           </Button>
         </nav>
 
@@ -84,18 +90,24 @@ export function LandingNavbar() {
       {mobileOpen && (
         <div className="bg-background/95 border-border/50 border-t backdrop-blur-lg sm:hidden">
           <div className="flex flex-col gap-2 px-4 py-4">
-            <Button variant="outline" asChild className="w-full justify-center">
-              <Link href="/hr-login" onClick={() => setMobileOpen(false)}>
-                HR Login
-              </Link>
+            <Button
+              variant="outline"
+              className="w-full justify-center"
+              onClick={() => {
+                setMobileOpen(false);
+                onLoginClick('hr');
+              }}
+            >
+              HR Login
             </Button>
             <Button
-              asChild
               className="w-full justify-center bg-orange-500 text-white hover:bg-orange-600"
+              onClick={() => {
+                setMobileOpen(false);
+                onLoginClick('employee');
+              }}
             >
-              <Link href="/login" onClick={() => setMobileOpen(false)}>
-                Employee Login
-              </Link>
+              Employee Login
             </Button>
           </div>
         </div>

@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -9,10 +10,14 @@ import {
   LeaveChart,
   LeaveSummary,
   PageHeader,
-  ProfileCard,
+  TeamOnLeave,
+  UpcomingBirthdays,
   UpcomingHolidays,
   WorkTimeline,
 } from '@/components/employee-dashboard';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { getMyEmployeeProfile } from '@/features/admin/employee-profile/api/employee-profile';
 import {
   getAttendanceSummary,
@@ -59,7 +64,7 @@ function buildLeaveChartData(
 ): { label: string; value: number; color: string }[] {
   return balances.map((b, i) => ({
     label: b.leaveTypeConfig?.name ?? 'Unknown',
-    value: b.used,
+    value: Number(b.used),
     color: LEAVE_COLORS[i % LEAVE_COLORS.length],
   }));
 }
@@ -67,10 +72,13 @@ function buildLeaveChartData(
 function buildLeaveStats(
   balances: LeaveBalance[]
 ): { label: string; value: number | string }[] {
-  const totalAllocated = balances.reduce((s, b) => s + b.allocated, 0);
-  const totalUsed = balances.reduce((s, b) => s + b.used, 0);
-  const totalBalance = balances.reduce((s, b) => s + b.balance, 0);
-  const totalCarried = balances.reduce((s, b) => s + b.carriedForward, 0);
+  const paid = balances.filter(
+    b => !(b.leaveTypeConfig?.isUnlimited && !b.leaveTypeConfig?.isPaid)
+  );
+  const totalAllocated = paid.reduce((s, b) => s + Number(b.allocated), 0);
+  const totalUsed = paid.reduce((s, b) => s + Number(b.used), 0);
+  const totalBalance = paid.reduce((s, b) => s + Number(b.balance), 0);
+  const totalCarried = paid.reduce((s, b) => s + Number(b.carriedForward), 0);
 
   return [
     { label: 'Total Leaves', value: totalAllocated },
@@ -228,6 +236,34 @@ function buildProfileDetails(
   return details;
 }
 
+function DashboardSkeleton() {
+  return (
+    <div className="flex flex-col gap-5">
+      <div className="flex items-center justify-between">
+        <div className="space-y-2">
+          <Skeleton className="h-7 w-52" />
+          <Skeleton className="h-4 w-36" />
+        </div>
+        <Skeleton className="h-9 w-24" />
+      </div>
+      <div className="grid gap-5 lg:grid-cols-2">
+        <Skeleton className="h-64 rounded-xl" />
+        <Skeleton className="h-64 rounded-xl" />
+      </div>
+      <div className="grid gap-5 lg:grid-cols-3">
+        <Skeleton className="h-52 rounded-xl" />
+        <Skeleton className="h-52 rounded-xl" />
+        <Skeleton className="h-52 rounded-xl" />
+      </div>
+      <div className="grid gap-5 lg:grid-cols-3">
+        <Skeleton className="h-48 rounded-xl" />
+        <Skeleton className="h-48 rounded-xl" />
+        <Skeleton className="h-48 rounded-xl" />
+      </div>
+    </div>
+  );
+}
+
 export function EmployeeDashboardScreen() {
   const { data: session } = useSession();
   const [balances, setBalances] = useState<LeaveBalance[]>([]);
@@ -272,17 +308,13 @@ export function EmployeeDashboardScreen() {
     void fetchData();
   }, [fetchData]);
 
+  if (isLoading) {
+    return <DashboardSkeleton />;
+  }
+
   const userName = profile
     ? (profile.displayName ?? `${profile.firstName} ${profile.lastName}`)
     : (session?.user?.name ?? 'Employee');
-  const userRole = profile?.jobTitle ?? session?.user?.role ?? 'employee';
-
-  const profileDetails = buildProfileDetails(profile, {
-    name: session?.user?.name,
-    email: session?.user?.email,
-    role: session?.user?.role,
-  });
-
   const leaveChartData = buildLeaveChartData(balances);
   const leaveStats = buildLeaveStats(balances);
   const hoursStats = buildHoursStats(attendance, summary);
@@ -290,19 +322,16 @@ export function EmployeeDashboardScreen() {
     attendance,
     summary
   );
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <p className="text-muted-foreground">Loading...</p>
-      </div>
-    );
-  }
+  const profileDetails = buildProfileDetails(profile, {
+    name: session?.user?.name,
+    email: session?.user?.email,
+    role: session?.user?.role,
+  });
 
   return (
     <div className="flex flex-col gap-5">
       <PageHeader
-        title="Employee Dashboard"
+        title={`Welcome back, ${userName.split(' ')[0]}`}
         breadcrumbs={[
           { label: 'Dashboard', href: '/dashboard' },
           { label: 'Employee Dashboard' },
@@ -310,35 +339,65 @@ export function EmployeeDashboardScreen() {
         date={formatCurrentDate()}
       />
 
-      <div className="grid gap-5 lg:grid-cols-3">
-        <ProfileCard
-          name={userName}
-          role={userRole}
-          details={profileDetails}
-          profileHref="/dashboard/profile"
-        />
-        <LeaveChart
-          title="Leave Details"
-          year={String(currentYear)}
-          items={leaveChartData}
-        />
+      {/* Row 1: Attendance + Leave Summary */}
+      <div className="grid gap-5 lg:grid-cols-2">
+        <AttendanceClock />
         <LeaveSummary
-          title="Leave Details"
+          title="Leave Overview"
           year={String(currentYear)}
           stats={leaveStats}
+          actionSlot={
+            <Button variant="outline" className="mt-3 w-full" asChild>
+              <Link href="/dashboard/leave">View Leave Details</Link>
+            </Button>
+          }
+          hideApplyButton
         />
       </div>
 
+      {/* Row 2: Leave Chart + Quick Profile */}
       <div className="grid gap-5 lg:grid-cols-3">
-        <AttendanceClock />
+        <div className="lg:col-span-2">
+          <LeaveChart
+            title="Leave Breakdown"
+            year={String(currentYear)}
+            items={leaveChartData}
+          />
+        </div>
+        <Card className="h-full">
+          <CardContent className="flex h-full flex-col p-5">
+            <h3 className="mb-4 font-semibold">Quick Info</h3>
+            <div className="flex flex-1 flex-col gap-2.5">
+              {profileDetails.map(d => (
+                <div key={d.label} className="flex justify-between gap-2">
+                  <span className="text-muted-foreground text-xs">
+                    {d.label}
+                  </span>
+                  <span className="truncate text-right text-xs font-medium">
+                    {d.value}
+                  </span>
+                </div>
+              ))}
+            </div>
+            <Button variant="outline" className="mt-3 w-full" asChild>
+              <Link href="/dashboard/profile">View Full Profile</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
 
+      {/* Row 3: Hours Stats + Team On Leave */}
+      <div className="grid gap-5 lg:grid-cols-3">
         <div className="flex flex-col gap-5 lg:col-span-2">
           <HoursStats stats={hoursStats} />
           <WorkTimeline stats={timelineStats} bars={timelineBars} />
         </div>
+        <TeamOnLeave />
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-3">
+      {/* Row 4: Birthdays + Holidays */}
+      <div className="grid gap-5 lg:grid-cols-2">
+        <UpcomingBirthdays />
         <UpcomingHolidays />
       </div>
     </div>

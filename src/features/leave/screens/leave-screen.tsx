@@ -128,6 +128,8 @@ export function LeaveScreen() {
     cancelled: 0,
   });
 
+  const [unpaidInfo, setUnpaidInfo] = useState<AvailableLeaveType | null>(null);
+
   const [form, setForm] = useState({
     leaveTypeConfigId: '',
     startDate: '',
@@ -141,7 +143,7 @@ export function LeaveScreen() {
     if (!session?.user) return;
     setIsLoading(true);
     try {
-      const [balRes, leaveRes] = await Promise.all([
+      const [balRes, leaveRes, typesRes] = await Promise.all([
         getMyLeaveBalances(selectedYear).catch(() => ({
           data: [] as LeaveBalance[],
         })),
@@ -159,9 +161,17 @@ export function LeaveScreen() {
             statusCounts: {},
           },
         })),
+        getAvailableLeaveTypes().catch(() => null),
       ]);
       const rawBal = balRes.data;
       setBalances(Array.isArray(rawBal) ? rawBal : []);
+
+      if (typesRes?.data?.leaveTypes) {
+        const types = typesRes.data.leaveTypes;
+        setAvailableTypes(types);
+        const unpaid = types.find(t => t.isUnlimited && !t.isPaid);
+        setUnpaidInfo(unpaid ?? null);
+      }
 
       const leaveData = leaveRes.data;
       if (
@@ -193,11 +203,13 @@ export function LeaveScreen() {
 
   const openApplyDialog = async () => {
     setShowApply(true);
-    try {
-      const res = await getAvailableLeaveTypes();
-      setAvailableTypes(res.data?.leaveTypes ?? []);
-    } catch {
-      toast.error('Failed to load leave types');
+    if (availableTypes.length === 0) {
+      try {
+        const res = await getAvailableLeaveTypes();
+        setAvailableTypes(res.data?.leaveTypes ?? []);
+      } catch {
+        toast.error('Failed to load leave types');
+      }
     }
   };
 
@@ -260,13 +272,19 @@ export function LeaveScreen() {
     }
   };
 
-  const totalAllocated = balances.reduce(
+  const paidBalances = balances.filter(
+    b => !(b.leaveTypeConfig?.isUnlimited && !b.leaveTypeConfig?.isPaid)
+  );
+  const totalAllocated = paidBalances.reduce(
     (sum, b) => sum + Number(b.allocated),
     0
   );
-  const totalUsed = balances.reduce((sum, b) => sum + Number(b.used), 0);
-  const totalBalance = balances.reduce((sum, b) => sum + Number(b.balance), 0);
-  const totalCarried = balances.reduce(
+  const totalUsed = paidBalances.reduce((sum, b) => sum + Number(b.used), 0);
+  const totalBalance = paidBalances.reduce(
+    (sum, b) => sum + Number(b.balance),
+    0
+  );
+  const totalCarried = paidBalances.reduce(
     (sum, b) => sum + Number(b.carriedForward),
     0
   );
@@ -380,42 +398,95 @@ export function LeaveScreen() {
             </div>
 
             {/* Per-type Balance Cards */}
-            {balances.length > 0 ? (
+            {balances.length > 0 || unpaidInfo ? (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {balances.map(b => {
                   const alloc = Number(b.allocated);
                   const used = Number(b.used);
                   const bal = Number(b.balance);
+                  const isUnlimitedType = b.leaveTypeConfig?.isUnlimited;
                   return (
                     <Card key={b.id}>
                       <CardHeader className="pb-2">
                         <CardTitle className="flex items-center justify-between text-sm font-medium">
                           <span>{b.leaveTypeConfig?.name ?? 'Leave'}</span>
-                          {b.leaveTypeConfig?.code && (
-                            <Badge variant="outline" className="text-xs">
-                              {b.leaveTypeConfig.code}
-                            </Badge>
-                          )}
+                          <div className="flex items-center gap-1.5">
+                            {isUnlimitedType && (
+                              <Badge className="bg-purple-100 text-[10px] text-purple-700 hover:bg-purple-100">
+                                Unlimited
+                              </Badge>
+                            )}
+                            {b.leaveTypeConfig?.code && (
+                              <Badge variant="outline" className="text-xs">
+                                {b.leaveTypeConfig.code}
+                              </Badge>
+                            )}
+                          </div>
                         </CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-1">
-                        <div className="flex items-baseline justify-between">
-                          <span className="text-3xl font-bold">{bal}</span>
-                          <span className="text-muted-foreground text-xs">
-                            of {alloc} remaining
-                          </span>
-                        </div>
-                        <BalanceProgress used={used} allocated={alloc} />
-                        <div className="text-muted-foreground flex justify-between pt-1 text-xs">
-                          <span>Used: {used}</span>
-                          {Number(b.carriedForward) > 0 && (
-                            <span>CF: {Number(b.carriedForward)}</span>
-                          )}
-                        </div>
+                        {isUnlimitedType ? (
+                          <>
+                            <div className="flex items-baseline justify-between">
+                              <span className="text-3xl font-bold">∞</span>
+                              <span className="text-muted-foreground text-xs">
+                                No limit
+                              </span>
+                            </div>
+                            <div className="text-muted-foreground pt-1 text-xs">
+                              Used: {used}
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="flex items-baseline justify-between">
+                              <span className="text-3xl font-bold">{bal}</span>
+                              <span className="text-muted-foreground text-xs">
+                                of {alloc} remaining
+                              </span>
+                            </div>
+                            <BalanceProgress used={used} allocated={alloc} />
+                            <div className="text-muted-foreground flex justify-between pt-1 text-xs">
+                              <span>Used: {used}</span>
+                              {Number(b.carriedForward) > 0 && (
+                                <span>CF: {Number(b.carriedForward)}</span>
+                              )}
+                            </div>
+                          </>
+                        )}
                       </CardContent>
                     </Card>
                   );
                 })}
+
+                {unpaidInfo && (
+                  <Card className="border-dashed">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="flex items-center justify-between text-sm font-medium">
+                        <span>{unpaidInfo.name}</span>
+                        <div className="flex items-center gap-1.5">
+                          <Badge className="bg-amber-100 text-[10px] text-amber-700 hover:bg-amber-100">
+                            Unpaid
+                          </Badge>
+                          <Badge className="bg-purple-100 text-[10px] text-purple-700 hover:bg-purple-100">
+                            Unlimited
+                          </Badge>
+                        </div>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-1">
+                      <div className="flex items-baseline justify-between">
+                        <span className="text-3xl font-bold">∞</span>
+                        <span className="text-muted-foreground text-xs">
+                          No limit
+                        </span>
+                      </div>
+                      <div className="text-muted-foreground pt-1 text-xs">
+                        Used this year: {unpaidInfo.used}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
               </div>
             ) : (
               <Card>
@@ -492,6 +563,10 @@ export function LeaveScreen() {
                                 {l.leaveTypeConfig ? (
                                   <Badge variant="outline" className="w-fit">
                                     {l.leaveTypeConfig.name}
+                                  </Badge>
+                                ) : l.leaveType === 'unpaid' ? (
+                                  <Badge className="w-fit bg-amber-100 text-amber-700 hover:bg-amber-100">
+                                    Unpaid Leave
                                   </Badge>
                                 ) : (
                                   <span className="text-muted-foreground text-xs">

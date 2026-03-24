@@ -1,11 +1,16 @@
 'use client';
 
 import { ArrowRight, Sparkles } from 'lucide-react';
-import Link from 'next/link';
 
 import { Button } from '@/components/ui/button';
 
-export function CtaSection() {
+import type { LoginMode } from './login-dialog';
+
+interface CtaSectionProps {
+  onLoginClick: (mode: LoginMode) => void;
+}
+
+export function CtaSection({ onLoginClick }: CtaSectionProps) {
   return (
     <section className="relative overflow-hidden bg-gradient-to-br from-orange-500 via-orange-500 to-amber-500 py-20 lg:py-24">
       {/* Decorative circles */}
@@ -31,21 +36,19 @@ export function CtaSection() {
         <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
           <Button
             size="lg"
-            asChild
             className="bg-white text-orange-600 shadow-lg hover:bg-orange-50"
+            onClick={() => onLoginClick('employee')}
           >
-            <Link href="/login">
-              Login Now
-              <ArrowRight className="size-4" />
-            </Link>
+            Login Now
+            <ArrowRight className="size-4" />
           </Button>
           <Button
             size="lg"
             variant="outline"
-            asChild
             className="border-white/30 bg-transparent text-white hover:bg-white/10 hover:text-white"
+            onClick={() => onLoginClick('hr')}
           >
-            <Link href="/hr-login">HR Admin Access</Link>
+            HR Admin Access
           </Button>
         </div>
       </div>

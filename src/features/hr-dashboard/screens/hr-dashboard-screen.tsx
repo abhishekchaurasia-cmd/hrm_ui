@@ -1,16 +1,20 @@
 'use client';
 
+import axios from 'axios';
 import {
   AlertTriangle,
   ArrowRight,
   CircleCheck,
   Clock3,
   FileWarning,
+  Search,
+  Trash2,
   UserCheck,
   Users,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 import {
   AttendanceFollowupSection,
@@ -23,6 +27,23 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
   Table,
   TableBody,
   TableCell,
@@ -31,6 +52,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import service, { HttpMethod } from '@/services/http';
+import { deleteUser } from '@/services/users';
 
 import type { AttendanceStatusItem } from '@/components/attendance-dashboard/attendance-status';
 import type { SummaryItem } from '@/components/attendance-dashboard/attendance-summary';
@@ -71,16 +93,25 @@ interface LeavesResponse {
 }
 
 const AVATAR_COLORS = [
-  '#b45309',
-  '#dc2626',
-  '#64748b',
-  '#0891b2',
-  '#7c3aed',
-  '#059669',
-  '#d97706',
+  '#6366f1',
+  '#ec4899',
+  '#f59e0b',
+  '#10b981',
+  '#3b82f6',
+  '#8b5cf6',
+  '#ef4444',
 ];
 
 const EXPECTED_DAILY_MINUTES = 9 * 60;
+
+const STATUS_OPTIONS = [
+  { value: 'all', label: 'All Statuses' },
+  { value: 'present', label: 'Present' },
+  { value: 'late', label: 'Late' },
+  { value: 'half_day', label: 'Half Day' },
+  { value: 'absent', label: 'Absent' },
+  { value: 'not_marked', label: 'Not Marked' },
+] as const;
 
 function getInitials(first: string, last: string): string {
   return `${first.charAt(0)}${last.charAt(0)}`.toUpperCase();
@@ -137,7 +168,7 @@ function computeOverviewStats(
       delta: '',
       direction: 'up',
       icon: Users,
-      iconBg: '#f97316',
+      iconBg: '#6366f1',
     },
     {
       title: 'Present Today',
@@ -145,7 +176,7 @@ function computeOverviewStats(
       delta: '',
       direction: 'up',
       icon: UserCheck,
-      iconBg: '#0ea5e9',
+      iconBg: '#10b981',
     },
     {
       title: 'Absent Today',
@@ -153,7 +184,7 @@ function computeOverviewStats(
       delta: '',
       direction: 'down',
       icon: AlertTriangle,
-      iconBg: '#eab308',
+      iconBg: '#ef4444',
     },
     {
       title: 'Late Arrivals',
@@ -161,7 +192,7 @@ function computeOverviewStats(
       delta: '',
       direction: 'up',
       icon: Clock3,
-      iconBg: '#3b82f6',
+      iconBg: '#f59e0b',
     },
     {
       title: 'Attendance Rate',
@@ -169,7 +200,7 @@ function computeOverviewStats(
       delta: '',
       direction: 'up',
       icon: CircleCheck,
-      iconBg: '#a855f7',
+      iconBg: '#8b5cf6',
     },
     {
       title: 'Not Marked',
@@ -177,7 +208,7 @@ function computeOverviewStats(
       delta: '',
       direction: 'down',
       icon: FileWarning,
-      iconBg: '#ef4444',
+      iconBg: '#64748b',
     },
   ];
 }
@@ -193,7 +224,7 @@ function computeStatusData(
 
   return [
     { label: 'Present', value: present, color: '#22c55e' },
-    { label: 'Late', value: late, color: '#eab308' },
+    { label: 'Late', value: late, color: '#f59e0b' },
     { label: 'Half Day', value: halfDay, color: '#f97316' },
     { label: 'Absent', value: absent, color: '#ef4444' },
     { label: 'Not Marked', value: notMarked, color: '#94a3b8' },
@@ -269,6 +300,48 @@ function computeAvgWorkingPercent(
   return (avgMinutes / EXPECTED_DAILY_MINUTES) * 100;
 }
 
+function getErrorMessage(err: unknown, fallback: string): string {
+  if (axios.isAxiosError(err)) {
+    const message = err.response?.data?.message;
+    if (Array.isArray(message)) return message.join(', ');
+    if (typeof message === 'string' && message.length > 0) return message;
+    return fallback;
+  }
+  if (err && typeof err === 'object' && 'message' in err) {
+    return String((err as { message: unknown }).message);
+  }
+  return fallback;
+}
+
+function DashboardSkeleton() {
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="flex items-center justify-between">
+        <div className="space-y-2">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-4 w-32" />
+        </div>
+        <Skeleton className="h-9 w-24" />
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <Skeleton key={i} className="h-[76px] rounded-xl" />
+        ))}
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
+        <Skeleton className="h-64 rounded-xl" />
+        <Skeleton className="h-64 rounded-xl" />
+      </div>
+
+      <Skeleton className="h-48 rounded-xl" />
+
+      <Skeleton className="h-96 rounded-xl" />
+    </div>
+  );
+}
+
 export function HrDashboardScreen() {
   const [employees, setEmployees] = useState<HrTodayEmployeeAttendance[]>([]);
   const [leaves, setLeaves] = useState<LeaveRequest[]>([]);
@@ -276,43 +349,79 @@ export function HrDashboardScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const [attendanceRes, leavesRes] = await Promise.all([
-          service({
-            method: HttpMethod.GET,
-            url: '/api/v1/hr/attendance/today',
-          }),
-          service({
-            method: HttpMethod.GET,
-            url: '/api/v1/leaves',
-          }).catch(() => null),
-        ]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
 
-        const attendancePayload = attendanceRes.data as HrTodayResponse;
-        setEmployees(attendancePayload.data.employees);
-        setWorkDate(attendancePayload.data.workDate);
+  const [deleteTarget, setDeleteTarget] =
+    useState<HrTodayEmployeeAttendance | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-        if (leavesRes?.data) {
-          const leavesPayload = leavesRes.data as LeavesResponse;
-          setLeaves(leavesPayload.data);
-        }
-      } catch (err: unknown) {
-        const message =
-          err && typeof err === 'object' && 'message' in err
-            ? String((err as { message: unknown }).message)
-            : 'Failed to load HR dashboard data';
-        setError(message);
-      } finally {
-        setIsLoading(false);
+  const fetchData = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const [attendanceRes, leavesRes] = await Promise.all([
+        service({
+          method: HttpMethod.GET,
+          url: '/api/v1/hr/attendance/today',
+        }),
+        service({
+          method: HttpMethod.GET,
+          url: '/api/v1/leaves',
+        }).catch(() => null),
+      ]);
+
+      const attendancePayload = attendanceRes.data as HrTodayResponse;
+      setEmployees(attendancePayload.data.employees);
+      setWorkDate(attendancePayload.data.workDate);
+
+      if (leavesRes?.data) {
+        const leavesPayload = leavesRes.data as LeavesResponse;
+        setLeaves(leavesPayload.data);
       }
-    };
-
-    void fetchData();
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, 'Failed to load HR dashboard data'));
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    void fetchData();
+  }, [fetchData]);
+
+  const handleDeleteEmployee = async () => {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
+    try {
+      await deleteUser(deleteTarget.id);
+      toast.success(
+        `${deleteTarget.firstName} ${deleteTarget.lastName} has been permanently removed`
+      );
+      setDeleteTarget(null);
+      void fetchData();
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err, 'Failed to delete employee'));
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const filteredEmployees = employees.filter(emp => {
+    const matchesSearch =
+      searchQuery.length === 0 ||
+      `${emp.firstName} ${emp.lastName}`
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase()) ||
+      emp.email.toLowerCase().includes(searchQuery.toLowerCase());
+
+    const matchesStatus =
+      statusFilter === 'all' ||
+      (statusFilter === 'not_marked' && emp.status === null) ||
+      emp.status === statusFilter;
+
+    return matchesSearch && matchesStatus;
+  });
 
   const overviewStats = computeOverviewStats(employees);
   const statusData = computeStatusData(employees);
@@ -324,8 +433,12 @@ export function HrDashboardScreen() {
     e => e.punchInAt !== null && e.punchOutAt === null
   ).length;
 
+  if (isLoading) {
+    return <DashboardSkeleton />;
+  }
+
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-6">
       <PageHeader
         title="HR Dashboard"
         breadcrumbs={[
@@ -334,19 +447,19 @@ export function HrDashboardScreen() {
         ]}
       />
 
-      {isLoading ? (
-        <div className="flex items-center justify-center py-20">
-          <p className="text-muted-foreground">Loading dashboard...</p>
-        </div>
-      ) : error ? (
-        <div className="border-destructive/40 bg-destructive/10 rounded-md border p-4">
-          <p className="text-destructive text-sm">{error}</p>
-        </div>
+      {error ? (
+        <Card className="border-destructive/40 bg-destructive/5">
+          <CardContent className="py-4">
+            <p className="text-destructive text-sm">{error}</p>
+          </CardContent>
+        </Card>
       ) : (
         <>
+          {/* Overview Stats */}
           <OverviewStats items={overviewStats} />
 
-          <div className="grid gap-5 lg:grid-cols-[2fr_1fr]">
+          {/* Late Arrivals + Attendance Status */}
+          <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
             <LateArrivalsAlerts items={lateArrivals} />
             <AttendanceStatus
               statusData={statusData}
@@ -354,6 +467,15 @@ export function HrDashboardScreen() {
             />
           </div>
 
+          {/* Insights + Summary */}
+          <AttendanceFollowupSection
+            lateArrivalCount={lateArrivals.length}
+            missingPunchCount={missingPunchCount}
+            summaryItems={summaryItems}
+            avgWorkingHoursPercent={avgWorkingPercent}
+          />
+
+          {/* Leave Overview */}
           <LeaveSummary
             title="Leave Overview"
             year={new Date().getFullYear().toString()}
@@ -369,93 +491,182 @@ export function HrDashboardScreen() {
             }
           />
 
-          <AttendanceFollowupSection
-            lateArrivalCount={lateArrivals.length}
-            missingPunchCount={missingPunchCount}
-            summaryItems={summaryItems}
-            avgWorkingHoursPercent={avgWorkingPercent}
-          />
-
+          {/* Today's Attendance Table */}
           <Card>
-            <CardHeader className="flex-row items-center justify-between">
-              <CardTitle>
-                Today&apos;s Attendance {workDate ? `(${workDate})` : ''}
-              </CardTitle>
-              <Button asChild variant="outline" size="sm" className="gap-1.5">
-                <Link href="/dashboard/attendance">
-                  View Details
-                  <ArrowRight className="size-3.5" />
-                </Link>
-              </Button>
+            <CardHeader className="space-y-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <CardTitle className="text-lg">
+                  Today&apos;s Attendance
+                  {workDate ? (
+                    <span className="text-muted-foreground ml-2 text-sm font-normal">
+                      {workDate}
+                    </span>
+                  ) : null}
+                </CardTitle>
+                <Button asChild variant="outline" size="sm" className="gap-1.5">
+                  <Link href="/dashboard/attendance">
+                    View Details
+                    <ArrowRight className="size-3.5" />
+                  </Link>
+                </Button>
+              </div>
+
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <div className="relative flex-1">
+                  <Search className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
+                  <Input
+                    placeholder="Search by name or email..."
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-full sm:w-44">
+                    <SelectValue placeholder="Filter by status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {STATUS_OPTIONS.map(opt => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </CardHeader>
             <CardContent>
-              {employees.length === 0 ? (
-                <p className="text-muted-foreground py-6 text-center text-sm">
-                  No attendance records for today.
-                </p>
+              {filteredEmployees.length === 0 ? (
+                <div className="py-12 text-center">
+                  <p className="text-muted-foreground text-sm">
+                    {employees.length === 0
+                      ? 'No attendance records for today.'
+                      : 'No employees match the current filters.'}
+                  </p>
+                </div>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Employee</TableHead>
-                      <TableHead>Punch In</TableHead>
-                      <TableHead>Punch Out</TableHead>
-                      <TableHead>Total Hours</TableHead>
-                      <TableHead>Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {employees.map((employee, idx) => (
-                      <TableRow key={employee.id}>
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            <span
-                              className="inline-flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white"
-                              style={{
-                                backgroundColor:
-                                  AVATAR_COLORS[idx % AVATAR_COLORS.length],
-                              }}
-                            >
-                              {getInitials(
-                                employee.firstName,
-                                employee.lastName
-                              )}
-                            </span>
-                            <div>
-                              <p className="text-sm font-medium">
-                                {employee.firstName} {employee.lastName}
-                              </p>
-                              <p className="text-muted-foreground text-xs">
-                                {employee.email}
-                              </p>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-sm">
-                          {formatTime(employee.punchInAt)}
-                        </TableCell>
-                        <TableCell className="text-sm">
-                          {formatTime(employee.punchOutAt)}
-                        </TableCell>
-                        <TableCell className="text-sm">
-                          {formatTotalHours(employee.totalMinutes)}
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={getStatusBadgeVariant(employee.status)}
-                          >
-                            {getStatusLabel(employee.status)}
-                          </Badge>
-                        </TableCell>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Employee</TableHead>
+                        <TableHead>Punch In</TableHead>
+                        <TableHead>Punch Out</TableHead>
+                        <TableHead>Total Hours</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="w-16 text-right">
+                          Actions
+                        </TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredEmployees.map((employee, idx) => (
+                        <TableRow key={employee.id}>
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              <span
+                                className="inline-flex size-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white"
+                                style={{
+                                  backgroundColor:
+                                    AVATAR_COLORS[idx % AVATAR_COLORS.length],
+                                }}
+                              >
+                                {getInitials(
+                                  employee.firstName,
+                                  employee.lastName
+                                )}
+                              </span>
+                              <div className="min-w-0">
+                                <p className="truncate text-sm font-medium">
+                                  {employee.firstName} {employee.lastName}
+                                </p>
+                                <p className="text-muted-foreground truncate text-xs">
+                                  {employee.email}
+                                </p>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {formatTime(employee.punchInAt)}
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {formatTime(employee.punchOutAt)}
+                          </TableCell>
+                          <TableCell className="text-sm font-medium">
+                            {formatTotalHours(employee.totalMinutes)}
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={getStatusBadgeVariant(employee.status)}
+                            >
+                              {getStatusLabel(employee.status)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-muted-foreground hover:text-destructive size-8"
+                              onClick={() => setDeleteTarget(employee)}
+                            >
+                              <Trash2 className="size-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+
+              {employees.length > 0 && (
+                <p className="text-muted-foreground mt-4 text-xs">
+                  Showing {filteredEmployees.length} of {employees.length}{' '}
+                  employees
+                </p>
               )}
             </CardContent>
           </Card>
         </>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={deleteTarget !== null}
+        onOpenChange={open => {
+          if (!open) setDeleteTarget(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Remove Employee</DialogTitle>
+            <DialogDescription>
+              This will permanently delete{' '}
+              <span className="font-semibold">
+                {deleteTarget?.firstName} {deleteTarget?.lastName}
+              </span>{' '}
+              and all associated records (attendance, leaves, profile). This
+              action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => setDeleteTarget(null)}
+              disabled={isDeleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteEmployee}
+              disabled={isDeleting}
+            >
+              {isDeleting ? 'Removing...' : 'Remove Permanently'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

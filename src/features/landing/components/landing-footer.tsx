@@ -1,8 +1,12 @@
 'use client';
 
-import Link from 'next/link';
+import type { LoginMode } from './login-dialog';
 
-export function LandingFooter() {
+interface LandingFooterProps {
+  onLoginClick: (mode: LoginMode) => void;
+}
+
+export function LandingFooter({ onLoginClick }: LandingFooterProps) {
   const year = new Date().getFullYear();
 
   return (
@@ -26,18 +30,20 @@ export function LandingFooter() {
 
           {/* Links */}
           <nav className="flex items-center gap-6 text-sm">
-            <Link
-              href="/login"
+            <button
+              type="button"
+              onClick={() => onLoginClick('employee')}
               className="text-muted-foreground hover:text-foreground transition-colors"
             >
               Login
-            </Link>
-            <Link
-              href="/hr-login"
+            </button>
+            <button
+              type="button"
+              onClick={() => onLoginClick('hr')}
               className="text-muted-foreground hover:text-foreground transition-colors"
             >
               HR Login
-            </Link>
+            </button>
           </nav>
 
           {/* Copyright */}

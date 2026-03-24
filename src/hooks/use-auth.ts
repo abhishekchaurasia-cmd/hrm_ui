@@ -16,7 +16,7 @@ export function useAuth() {
 
     loginWithGoogle: () => signIn('google', { callbackUrl: '/' }),
 
-    logout: () => signOut({ callbackUrl: '/login' }),
+    logout: () => signOut({ callbackUrl: '/' }),
 
     hasRole: (role: string) => session?.user?.role === role,
     hasAnyRole: (...roles: string[]) =>

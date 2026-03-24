@@ -1,5 +1,6 @@
 'use client';
 
+import { Loader2 } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { useEffect } from 'react';
@@ -14,7 +15,7 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
 
   useEffect(() => {
     if (!session?.user) return;
@@ -28,6 +29,14 @@ export default function DashboardLayout({
       router.replace('/dashboard');
     }
   }, [pathname, router, session]);
+
+  if (status === 'loading') {
+    return (
+      <div className="bg-background flex h-screen items-center justify-center">
+        <Loader2 className="text-muted-foreground size-8 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="bg-background flex h-screen overflow-hidden">
