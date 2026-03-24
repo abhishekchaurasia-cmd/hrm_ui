@@ -54,12 +54,15 @@ export interface PaginatedLeaveResponse {
   statusCounts: Record<string, number>;
 }
 
-export async function getMyLeaveRequests(): Promise<
-  ApiResponse<PaginatedLeaveResponse>
-> {
+export async function getMyLeaveRequests(params?: {
+  page?: number;
+  limit?: number;
+  status?: string;
+}): Promise<ApiResponse<PaginatedLeaveResponse>> {
   const res = await service({
     method: HttpMethod.GET,
     url: '/api/v1/leaves/me',
+    params: params as Record<string, unknown>,
   });
   return res.data as ApiResponse<PaginatedLeaveResponse>;
 }

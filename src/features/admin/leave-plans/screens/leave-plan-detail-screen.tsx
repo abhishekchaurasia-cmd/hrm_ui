@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState, useCallback } from 'react';
 import { toast } from 'sonner';
 
-import { EmployeeSelect } from '@/components/employee-select';
+import { EmployeeMultiSelect } from '@/components/employee-multi-select';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Pagination, type PaginatedResponse } from '@/components/ui/pagination';
 import {
   Select,
   SelectContent,
@@ -73,6 +74,10 @@ export function LeavePlanDetailScreen({ planId }: LeavePlanDetailScreenProps) {
   const router = useRouter();
   const [plan, setPlan] = useState<LeavePlan | null>(null);
   const [assignments, setAssignments] = useState<LeavePlanAssignment[]>([]);
+  const [assignPage, setAssignPage] = useState(1);
+  const [assignLimit, setAssignLimit] = useState(20);
+  const [assignTotal, setAssignTotal] = useState(0);
+  const [assignTotalPages, setAssignTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -93,7 +98,7 @@ export function LeavePlanDetailScreen({ planId }: LeavePlanDetailScreenProps) {
   const [showAssignEmployee, setShowAssignEmployee] = useState(false);
   const [isAssigning, setIsAssigning] = useState(false);
   const [assignForm, setAssignForm] = useState({
-    userId: '',
+    userIds: [] as string[],
     effectiveFrom: new Date().toISOString().split('T')[0],
     effectiveTo: '',
   });
@@ -116,8 +121,18 @@ export function LeavePlanDetailScreen({ planId }: LeavePlanDetailScreenProps) {
     try {
       const [planRes, assignRes] = await Promise.all([
         getLeavePlan(planId),
-        getLeavePlanAssignments({ planId }).catch(() => ({
-          data: [] as LeavePlanAssignment[],
+        getLeavePlanAssignments({
+          planId,
+          page: assignPage,
+          limit: assignLimit,
+        }).catch(() => ({
+          data: {
+            items: [] as LeavePlanAssignment[],
+            total: 0,
+            page: 1,
+            limit: 20,
+            totalPages: 1,
+          },
         })),
       ]);
       setPlan(planRes.data);
@@ -125,13 +140,17 @@ export function LeavePlanDetailScreen({ planId }: LeavePlanDetailScreenProps) {
         name: planRes.data.name,
         description: planRes.data.description ?? '',
       });
-      setAssignments(assignRes.data);
+      const paginated =
+        assignRes.data as unknown as PaginatedResponse<LeavePlanAssignment>;
+      setAssignments(paginated.items);
+      setAssignTotal(paginated.total);
+      setAssignTotalPages(paginated.totalPages);
     } catch {
       toast.error('Failed to load leave plan');
     } finally {
       setIsLoading(false);
     }
-  }, [planId]);
+  }, [planId, assignPage, assignLimit]);
 
   useEffect(() => {
     void fetchData();
@@ -196,31 +215,51 @@ export function LeavePlanDetailScreen({ planId }: LeavePlanDetailScreenProps) {
   };
 
   const handleAssignEmployee = async () => {
-    if (!assignForm.userId) {
-      toast.error('Employee ID is required');
+    if (assignForm.userIds.length === 0) {
+      toast.error('Please select at least one employee');
       return;
     }
     setIsAssigning(true);
     try {
-      const res = await assignLeavePlan({
-        userId: assignForm.userId,
-        leavePlanId: planId,
-        effectiveFrom: assignForm.effectiveFrom,
-        effectiveTo: assignForm.effectiveTo || null,
-      });
-      toast.success(res.message);
+      const results = await Promise.allSettled(
+        assignForm.userIds.map(userId =>
+          assignLeavePlan({
+            userId,
+            leavePlanId: planId,
+            effectiveFrom: assignForm.effectiveFrom,
+            effectiveTo: assignForm.effectiveTo || null,
+          })
+        )
+      );
+
+      const succeeded = results.filter(r => r.status === 'fulfilled').length;
+      const failed = results.filter(r => r.status === 'rejected').length;
+
+      if (failed === 0) {
+        toast.success(`Plan assigned to ${succeeded} employee(s)`);
+      } else if (succeeded === 0) {
+        const firstErr = results.find(
+          r => r.status === 'rejected'
+        ) as PromiseRejectedResult;
+        const message = axios.isAxiosError(firstErr.reason)
+          ? (firstErr.reason.response?.data?.message ?? 'Failed to assign plan')
+          : 'Failed to assign plan';
+        toast.error(message);
+      } else {
+        toast.warning(
+          `Assigned to ${succeeded} employee(s), failed for ${failed}`
+        );
+      }
+
       setShowAssignEmployee(false);
       setAssignForm({
-        userId: '',
+        userIds: [],
         effectiveFrom: new Date().toISOString().split('T')[0],
         effectiveTo: '',
       });
       void fetchData();
-    } catch (err: unknown) {
-      const message = axios.isAxiosError(err)
-        ? (err.response?.data?.message ?? 'Failed to assign plan')
-        : 'Failed to assign plan';
-      toast.error(message);
+    } catch {
+      toast.error('Failed to assign plan');
     } finally {
       setIsAssigning(false);
     }
@@ -352,7 +391,7 @@ export function LeavePlanDetailScreen({ planId }: LeavePlanDetailScreenProps) {
             Leave Types ({leaveTypes.length})
           </TabsTrigger>
           <TabsTrigger value="employees">
-            Assigned Employees ({assignments.length})
+            Assigned Employees ({assignTotal})
           </TabsTrigger>
           <TabsTrigger value="year-end">Year-End Processing</TabsTrigger>
         </TabsList>
@@ -490,6 +529,16 @@ export function LeavePlanDetailScreen({ planId }: LeavePlanDetailScreenProps) {
                     ))}
                   </TableBody>
                 </Table>
+              )}
+              {assignTotal > 0 && (
+                <Pagination
+                  page={assignPage}
+                  totalPages={assignTotalPages}
+                  total={assignTotal}
+                  limit={assignLimit}
+                  onPageChange={setAssignPage}
+                  onLimitChange={setAssignLimit}
+                />
               )}
             </CardContent>
           </Card>
@@ -710,18 +759,18 @@ export function LeavePlanDetailScreen({ planId }: LeavePlanDetailScreenProps) {
       <Dialog open={showAssignEmployee} onOpenChange={setShowAssignEmployee}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Assign Employee to Plan</DialogTitle>
+            <DialogTitle>Assign Employees to Plan</DialogTitle>
             <DialogDescription>
-              Select an employee and set the effective dates.
+              Select employees and set the effective dates.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Employee</Label>
-              <EmployeeSelect
-                value={assignForm.userId}
-                onValueChange={v => setAssignForm(p => ({ ...p, userId: v }))}
-                placeholder="Select employee..."
+              <Label>Employees</Label>
+              <EmployeeMultiSelect
+                value={assignForm.userIds}
+                onValueChange={v => setAssignForm(p => ({ ...p, userIds: v }))}
+                placeholder="Select employees..."
               />
             </div>
             <div className="grid grid-cols-2 gap-4">

@@ -16,6 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Pagination } from '@/components/ui/pagination';
 import {
   Table,
   TableBody,
@@ -57,6 +58,10 @@ type ReviewAction = 'approve' | 'reject';
 export function LeaveRequestsScreen() {
   const [leaves, setLeaves] = useState<LeaveRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [activeTab, setActiveTab] = useState<LeaveRequestStatus | 'all'>(
     'pending'
   );
@@ -72,14 +77,18 @@ export function LeaveRequestsScreen() {
     setIsLoading(true);
     try {
       const status = activeTab === 'all' ? undefined : activeTab;
-      const res = await getHrLeaves({ status });
-      setLeaves(res.data?.leaves ?? []);
+      const res = await getHrLeaves({ status, page, limit });
+      const leavesData = res.data?.leaves ?? [];
+      const totalCount = res.data?.total ?? 0;
+      setLeaves(leavesData);
+      setTotal(totalCount);
+      setTotalPages(Math.ceil(totalCount / limit) || 1);
     } catch {
       toast.error('Failed to load leave requests');
     } finally {
       setIsLoading(false);
     }
-  }, [activeTab]);
+  }, [activeTab, page, limit]);
 
   useEffect(() => {
     void fetchLeaves();
@@ -110,7 +119,7 @@ export function LeaveRequestsScreen() {
     }
   };
 
-  const pendingCount = leaves.length;
+  const pendingCount = activeTab === 'pending' ? total : leaves.length;
 
   return (
     <div className="flex flex-col gap-5">
@@ -123,7 +132,10 @@ export function LeaveRequestsScreen() {
 
       <Tabs
         value={activeTab}
-        onValueChange={v => setActiveTab(v as LeaveRequestStatus | 'all')}
+        onValueChange={v => {
+          setActiveTab(v as LeaveRequestStatus | 'all');
+          setPage(1);
+        }}
       >
         <TabsList>
           <TabsTrigger value="pending" className="gap-1.5">
@@ -278,6 +290,16 @@ export function LeaveRequestsScreen() {
                     </TableBody>
                   </Table>
                 )}
+                {!isLoading && leaves.length > 0 && (
+                  <Pagination
+                    page={page}
+                    totalPages={totalPages}
+                    total={total}
+                    limit={limit}
+                    onPageChange={setPage}
+                    onLimitChange={setLimit}
+                  />
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -318,7 +340,9 @@ export function LeaveRequestsScreen() {
           <div className="space-y-3">
             <div className="text-muted-foreground rounded-lg border p-3 text-sm">
               <p>
-                <span className="font-medium text-neutral-300">Period:</span>{' '}
+                <span className="text-muted-foreground font-medium">
+                  Period:
+                </span>{' '}
                 {reviewTarget && formatDate(reviewTarget.leave.startDate)}
                 {reviewTarget &&
                   reviewTarget.leave.startDate !== reviewTarget.leave.endDate &&
@@ -326,7 +350,9 @@ export function LeaveRequestsScreen() {
               </p>
               {reviewTarget?.leave.reason && (
                 <p className="mt-1">
-                  <span className="font-medium text-neutral-300">Reason:</span>{' '}
+                  <span className="text-muted-foreground font-medium">
+                    Reason:
+                  </span>{' '}
                   {reviewTarget.leave.reason}
                 </p>
               )}

@@ -40,7 +40,7 @@ export function PenalizationPolicyAssignmentScreen() {
 
   const { data: assignmentsData, isLoading: assignmentsLoading } =
     usePolicyAssignments(selectedPolicyId || null);
-  const assignments = assignmentsData?.data ?? [];
+  const assignments = assignmentsData?.data?.items ?? [];
 
   const filtered = assignments.filter(a => {
     if (!search) return true;

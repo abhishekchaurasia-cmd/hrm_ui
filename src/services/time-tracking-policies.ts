@@ -66,14 +66,24 @@ export async function deleteTimeTrackingPolicy(
   return res.data as ApiResponse<null>;
 }
 
+export interface PaginatedAssignments {
+  items: TimeTrackingPolicyAssignment[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
 export async function getTimeTrackingPolicyAssignments(
-  policyId: string
-): Promise<ApiResponse<TimeTrackingPolicyAssignment[]>> {
+  policyId: string,
+  params?: { page?: number; limit?: number }
+): Promise<ApiResponse<PaginatedAssignments>> {
   const res = await service({
     method: HttpMethod.GET,
     url: `${BASE_URL}/${policyId}/assignments`,
+    params: params as Record<string, unknown>,
   });
-  return res.data as ApiResponse<TimeTrackingPolicyAssignment[]>;
+  return res.data as ApiResponse<PaginatedAssignments>;
 }
 
 export async function assignEmployeesToTimeTrackingPolicy(

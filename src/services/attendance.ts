@@ -63,3 +63,40 @@ export async function getAttendanceSummary(
   });
   return res.data as ApiResponse<AttendanceSummary>;
 }
+
+export async function getDetailedAttendanceReport(
+  month: number,
+  year: number
+): Promise<ApiResponse<unknown>> {
+  const res = await service({
+    method: HttpMethod.GET,
+    url: '/api/v1/attendance/me/detailed-report',
+    params: { month, year } as Record<string, unknown>,
+  });
+  return res.data as ApiResponse<unknown>;
+}
+
+export async function getHrEmployeeDetailedReport(
+  userId: string,
+  month: number,
+  year: number
+): Promise<ApiResponse<unknown>> {
+  const res = await service({
+    method: HttpMethod.GET,
+    url: `/api/v1/hr/attendance/employee/${userId}/detailed-report`,
+    params: { month, year } as Record<string, unknown>,
+  });
+  return res.data as ApiResponse<unknown>;
+}
+
+export async function getHrMonthlySummary(
+  month: number,
+  year: number
+): Promise<ApiResponse<unknown>> {
+  const res = await service({
+    method: HttpMethod.GET,
+    url: '/api/v1/hr/attendance/monthly-summary',
+    params: { month, year } as Record<string, unknown>,
+  });
+  return res.data as ApiResponse<unknown>;
+}

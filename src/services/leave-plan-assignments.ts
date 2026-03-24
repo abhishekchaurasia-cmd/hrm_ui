@@ -14,6 +14,8 @@ interface ApiResponse<T> {
 export async function getLeavePlanAssignments(params?: {
   userId?: string;
   planId?: string;
+  page?: number;
+  limit?: number;
 }): Promise<ApiResponse<LeavePlanAssignment[]>> {
   const res = await service({
     method: HttpMethod.GET,

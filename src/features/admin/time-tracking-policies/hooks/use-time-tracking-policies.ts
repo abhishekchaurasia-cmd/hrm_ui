@@ -34,10 +34,12 @@ interface ApiResponse<T> {
 
 const POLICIES_KEY = ['time-tracking-policies'] as const;
 const policyKey = (id: string) => ['time-tracking-policies', id];
-const assignmentsKey = (id: string) => [
+const assignmentsKey = (id: string, page?: number, limit?: number) => [
   'time-tracking-policies',
   id,
   'assignments',
+  page,
+  limit,
 ];
 
 export function useTimeTrackingPolicies(): UseQueryResult<
@@ -62,11 +64,22 @@ export function useTimeTrackingPolicy(
 }
 
 export function useTimeTrackingPolicyAssignments(
-  policyId: string | null
-): UseQueryResult<ApiResponse<TimeTrackingPolicyAssignment[]>> {
+  policyId: string | null,
+  params?: { page?: number; limit?: number }
+): UseQueryResult<
+  ApiResponse<{
+    items: TimeTrackingPolicyAssignment[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }>
+> {
+  const page = params?.page ?? 1;
+  const limit = params?.limit ?? 20;
   return useQuery({
-    queryKey: assignmentsKey(policyId ?? ''),
-    queryFn: () => getTimeTrackingPolicyAssignments(policyId!),
+    queryKey: assignmentsKey(policyId ?? '', page, limit),
+    queryFn: () => getTimeTrackingPolicyAssignments(policyId!, { page, limit }),
     enabled: Boolean(policyId),
     staleTime: 30_000,
   });

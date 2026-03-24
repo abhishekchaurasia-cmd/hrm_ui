@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -744,12 +745,10 @@ function CreatePlanDialog({
             />
           </div>
           <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              className="accent-primary size-4 rounded"
+            <Checkbox
               checked={form.isDefault}
-              onChange={e =>
-                setForm(p => ({ ...p, isDefault: e.target.checked }))
+              onCheckedChange={v =>
+                setForm(p => ({ ...p, isDefault: v as boolean }))
               }
             />
             Set as default plan for this year
@@ -848,12 +847,10 @@ function EditPlanDialog({
             />
           </div>
           <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              className="accent-primary size-4 rounded"
+            <Checkbox
               checked={form.isDefault}
-              onChange={e =>
-                setForm(p => ({ ...p, isDefault: e.target.checked }))
+              onCheckedChange={v =>
+                setForm(p => ({ ...p, isDefault: v as boolean }))
               }
             />
             Set as default plan
@@ -948,23 +945,19 @@ function AddHolidayDialog({
             />
           </div>
           <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              className="accent-primary size-4 rounded"
+            <Checkbox
               checked={form.isOptional}
-              onChange={e =>
-                setForm(p => ({ ...p, isOptional: e.target.checked }))
+              onCheckedChange={v =>
+                setForm(p => ({ ...p, isOptional: v as boolean }))
               }
             />
             Optional Holiday
           </label>
           <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              className="accent-primary size-4 rounded"
+            <Checkbox
               checked={form.isSpecial}
-              onChange={e =>
-                setForm(p => ({ ...p, isSpecial: e.target.checked }))
+              onCheckedChange={v =>
+                setForm(p => ({ ...p, isSpecial: v as boolean }))
               }
             />
             Special Holiday
@@ -1071,23 +1064,19 @@ function EditHolidayDialog({
             />
           </div>
           <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              className="accent-primary size-4 rounded"
+            <Checkbox
               checked={form.isOptional}
-              onChange={e =>
-                setForm(p => ({ ...p, isOptional: e.target.checked }))
+              onCheckedChange={v =>
+                setForm(p => ({ ...p, isOptional: v as boolean }))
               }
             />
             Optional Holiday
           </label>
           <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              className="accent-primary size-4 rounded"
+            <Checkbox
               checked={form.isSpecial}
-              onChange={e =>
-                setForm(p => ({ ...p, isSpecial: e.target.checked }))
+              onCheckedChange={v =>
+                setForm(p => ({ ...p, isSpecial: v as boolean }))
               }
             />
             Special Holiday
@@ -1276,14 +1265,12 @@ function ImportHolidaysDialog({
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-10">
-                        <input
-                          type="checkbox"
-                          className="accent-primary size-4 rounded"
+                        <Checkbox
                           checked={
                             selectedKeys.size === holidays.length &&
                             holidays.length > 0
                           }
-                          onChange={toggleAll}
+                          onCheckedChange={() => toggleAll()}
                         />
                       </TableHead>
                       <TableHead>Holiday Name</TableHead>
@@ -1297,11 +1284,9 @@ function ImportHolidaysDialog({
                       return (
                         <TableRow key={uid}>
                           <TableCell>
-                            <input
-                              type="checkbox"
-                              className="accent-primary size-4 rounded"
+                            <Checkbox
                               checked={selectedKeys.has(uid)}
-                              onChange={() => toggleDate(uid)}
+                              onCheckedChange={() => toggleDate(uid)}
                             />
                           </TableCell>
                           <TableCell className="font-medium">
@@ -1603,14 +1588,12 @@ function AssignEmployeesDialog({
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-10">
-                      <input
-                        type="checkbox"
-                        className="accent-primary size-4 rounded"
+                      <Checkbox
                         checked={
                           selectedIds.size === employees.length &&
                           employees.length > 0
                         }
-                        onChange={toggleAll}
+                        onCheckedChange={() => toggleAll()}
                       />
                     </TableHead>
                     <TableHead>Emp. Number</TableHead>
@@ -1622,11 +1605,9 @@ function AssignEmployeesDialog({
                   {employees.map(emp => (
                     <TableRow key={emp.userId}>
                       <TableCell>
-                        <input
-                          type="checkbox"
-                          className="accent-primary size-4 rounded"
+                        <Checkbox
                           checked={selectedIds.has(emp.userId)}
-                          onChange={() => toggleId(emp.userId)}
+                          onCheckedChange={() => toggleId(emp.userId)}
                         />
                       </TableCell>
                       <TableCell className="font-medium">

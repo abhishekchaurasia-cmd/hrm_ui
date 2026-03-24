@@ -27,6 +27,8 @@ export async function getLeaveBalances(params?: {
   userId?: string;
   planId?: string;
   year?: number;
+  page?: number;
+  limit?: number;
 }): Promise<ApiResponse<LeaveBalance[]>> {
   const res = await service({
     method: HttpMethod.GET,
@@ -62,6 +64,8 @@ export async function adjustBalance(
 export async function getTransactions(params?: {
   userId?: string;
   year?: number;
+  page?: number;
+  limit?: number;
 }): Promise<ApiResponse<LeaveTransaction[]>> {
   const res = await service({
     method: HttpMethod.GET,

@@ -41,10 +41,12 @@ interface ApiResponse<T> {
 const POLICIES_KEY = ['penalization-policies'] as const;
 const policyKey = (id: string) => ['penalization-policies', id];
 const versionsKey = (id: string) => ['penalization-policies', id, 'versions'];
-const assignmentsKey = (id: string) => [
+const assignmentsKey = (id: string, page?: number, limit?: number) => [
   'penalization-policies',
   id,
   'assignments',
+  page,
+  limit,
 ];
 const recordsKey = (params?: Record<string, unknown>) => [
   'penalization-records',
@@ -84,11 +86,22 @@ export function usePolicyVersions(
 }
 
 export function usePolicyAssignments(
-  policyId: string | null
-): UseQueryResult<ApiResponse<PenalizationPolicyAssignment[]>> {
+  policyId: string | null,
+  params?: { page?: number; limit?: number }
+): UseQueryResult<
+  ApiResponse<{
+    items: PenalizationPolicyAssignment[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }>
+> {
+  const page = params?.page ?? 1;
+  const limit = params?.limit ?? 20;
   return useQuery({
-    queryKey: assignmentsKey(policyId ?? ''),
-    queryFn: () => getPolicyAssignments(policyId!),
+    queryKey: assignmentsKey(policyId ?? '', page, limit),
+    queryFn: () => getPolicyAssignments(policyId!, { page, limit }),
     enabled: Boolean(policyId),
     staleTime: 30_000,
   });
@@ -172,11 +185,11 @@ export function useAssignEmployees(
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: dto => assignEmployees(policyId, dto),
-    onSuccess: data => {
+    onSuccess: () => {
       void queryClient.invalidateQueries({
-        queryKey: assignmentsKey(policyId),
+        queryKey: ['penalization-policies', policyId, 'assignments'],
       });
-      toast.success(data.message || 'Employees assigned');
+      toast.success('Employees assigned');
     },
     onError: () => {
       toast.error('Failed to assign employees');
@@ -190,11 +203,11 @@ export function useUnassignEmployee(
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: assignmentId => unassignEmployee(policyId, assignmentId),
-    onSuccess: data => {
+    onSuccess: () => {
       void queryClient.invalidateQueries({
-        queryKey: assignmentsKey(policyId),
+        queryKey: ['penalization-policies', policyId, 'assignments'],
       });
-      toast.success(data.message || 'Employee unassigned');
+      toast.success('Employee unassigned');
     },
     onError: () => {
       toast.error('Failed to unassign employee');

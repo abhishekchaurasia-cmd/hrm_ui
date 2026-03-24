@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Pagination, type PaginatedResponse } from '@/components/ui/pagination';
 import {
   Table,
   TableBody,
@@ -52,20 +53,40 @@ export function LeaveTransactionScreen() {
     String(new Date().getFullYear())
   );
   const [filterUserId, setFilterUserId] = useState('');
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
 
   const fetchTransactions = useCallback(async () => {
     setIsLoading(true);
     try {
-      const params: { userId?: string; year?: number } = {};
+      const params: {
+        userId?: string;
+        year?: number;
+        page?: number;
+        limit?: number;
+      } = {
+        page,
+        limit,
+      };
       if (filterYear) params.year = parseInt(filterYear, 10);
       if (filterUserId) params.userId = filterUserId;
       const res = await getTransactions(params);
-      setTransactions(res.data);
+      const payload =
+        res.data as unknown as PaginatedResponse<LeaveTransaction>;
+      setTransactions(payload.items);
+      setTotal(payload.total);
+      setTotalPages(payload.totalPages);
     } catch {
       toast.error('Failed to load transactions');
     } finally {
       setIsLoading(false);
     }
+  }, [filterYear, filterUserId, page, limit]);
+
+  useEffect(() => {
+    setPage(1);
   }, [filterYear, filterUserId]);
 
   useEffect(() => {
@@ -133,52 +154,62 @@ export function LeaveTransactionScreen() {
               No transactions found
             </p>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Employee</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead className="text-right">Days</TableHead>
-                  <TableHead className="text-right">Prev Balance</TableHead>
-                  <TableHead className="text-right">New Balance</TableHead>
-                  <TableHead>Remarks</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {transactions.map(tx => (
-                  <TableRow key={tx.id}>
-                    <TableCell className="text-xs whitespace-nowrap">
-                      {new Date(tx.createdAt).toLocaleString()}
-                    </TableCell>
-                    <TableCell className="text-xs">{tx.userId}</TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          TX_TYPE_VARIANTS[tx.transactionType] ?? 'secondary'
-                        }
-                      >
-                        {TX_TYPE_LABELS[tx.transactionType] ??
-                          tx.transactionType}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right font-medium">
-                      {Number(tx.days) > 0 ? '+' : ''}
-                      {Number(tx.days)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {Number(tx.previousBalance)}
-                    </TableCell>
-                    <TableCell className="text-right font-semibold">
-                      {Number(tx.newBalance)}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground max-w-[200px] truncate text-xs">
-                      {tx.remarks ?? '—'}
-                    </TableCell>
+            <>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Employee</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead className="text-right">Days</TableHead>
+                    <TableHead className="text-right">Prev Balance</TableHead>
+                    <TableHead className="text-right">New Balance</TableHead>
+                    <TableHead>Remarks</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {transactions.map(tx => (
+                    <TableRow key={tx.id}>
+                      <TableCell className="text-xs whitespace-nowrap">
+                        {new Date(tx.createdAt).toLocaleString()}
+                      </TableCell>
+                      <TableCell className="text-xs">{tx.userId}</TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={
+                            TX_TYPE_VARIANTS[tx.transactionType] ?? 'secondary'
+                          }
+                        >
+                          {TX_TYPE_LABELS[tx.transactionType] ??
+                            tx.transactionType}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right font-medium">
+                        {Number(tx.days) > 0 ? '+' : ''}
+                        {Number(tx.days)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {Number(tx.previousBalance)}
+                      </TableCell>
+                      <TableCell className="text-right font-semibold">
+                        {Number(tx.newBalance)}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground max-w-[200px] truncate text-xs">
+                        {tx.remarks ?? '—'}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              <Pagination
+                page={page}
+                totalPages={totalPages}
+                total={total}
+                limit={limit}
+                onPageChange={setPage}
+                onLimitChange={setLimit}
+              />
+            </>
           )}
         </CardContent>
       </Card>

@@ -13,8 +13,15 @@ interface ApiResponse<T> {
   data: T;
 }
 
-export async function getShifts(): Promise<ApiResponse<Shift[]>> {
-  const res = await service({ method: HttpMethod.GET, url: '/api/v1/shifts' });
+export async function getShifts(params?: {
+  page?: number;
+  limit?: number;
+}): Promise<ApiResponse<Shift[]>> {
+  const res = await service({
+    method: HttpMethod.GET,
+    url: '/api/v1/shifts',
+    params: params as Record<string, unknown>,
+  });
   return res.data as ApiResponse<Shift[]>;
 }
 

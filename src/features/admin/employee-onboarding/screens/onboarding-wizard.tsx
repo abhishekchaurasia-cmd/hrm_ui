@@ -214,7 +214,7 @@ export function OnboardingWizard({
 
       {/* Content */}
       <main className="flex-1 overflow-y-auto px-6 py-6">
-        <div className="mx-auto max-w-2xl">
+        <div className={`mx-auto ${step === 3 ? 'max-w-4xl' : 'max-w-2xl'}`}>
           {step === 0 && (
             <BasicDetailsForm
               defaultValues={formData.basicDetails}
@@ -241,6 +241,7 @@ export function OnboardingWizard({
               defaultValues={formData.compensation}
               onSubmit={handleCompensationSubmit}
               formRef={formRef}
+              joiningDate={formData.jobDetails?.joiningDate}
             />
           )}
         </div>

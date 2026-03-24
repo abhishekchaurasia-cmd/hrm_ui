@@ -19,11 +19,11 @@ function useOptions(
 }
 
 export function useShiftsOptions(): UseQueryResult<OptionItem[]> {
-  return useOptions('shifts', '/api/v1/shifts');
+  return useOptions('shifts', '/api/v1/shifts/options');
 }
 
 export function useLeavePlansOptions(): UseQueryResult<OptionItem[]> {
-  return useOptions('leave-plans', '/api/v1/leave-plans');
+  return useOptions('leave-plans', '/api/v1/leave-plans/options');
 }
 
 export function useSalaryComponentsList(): UseQueryResult<SalaryComponent[]> {

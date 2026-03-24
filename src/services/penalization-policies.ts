@@ -80,14 +80,24 @@ export async function getPolicyVersions(
   return res.data as ApiResponse<PenalizationPolicyVersion[]>;
 }
 
+export interface PaginatedAssignments {
+  items: PenalizationPolicyAssignment[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
 export async function getPolicyAssignments(
-  policyId: string
-): Promise<ApiResponse<PenalizationPolicyAssignment[]>> {
+  policyId: string,
+  params?: { page?: number; limit?: number }
+): Promise<ApiResponse<PaginatedAssignments>> {
   const res = await service({
     method: HttpMethod.GET,
     url: `${BASE_URL}/${policyId}/assignments`,
+    params: params as Record<string, unknown>,
   });
-  return res.data as ApiResponse<PenalizationPolicyAssignment[]>;
+  return res.data as ApiResponse<PaginatedAssignments>;
 }
 
 export async function assignEmployees(

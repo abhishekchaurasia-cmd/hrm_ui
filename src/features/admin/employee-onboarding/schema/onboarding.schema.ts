@@ -120,13 +120,19 @@ const breakupItemSchema = z.object({
 
 export const compensationSchema = z.object({
   enablePayroll: z.boolean(),
+  payGroup: z.string().max(100).nullable(),
   annualSalary: z.number().min(0, 'Must be 0 or more').nullable(),
+  salaryPeriod: z.enum(['per_annum', 'per_month']),
   currency: z.string().max(10),
   salaryEffectiveFrom: nullableDate,
   regularSalary: z.number().min(0).nullable(),
   bonus: z.number().min(0).nullable(),
-  isEsiEligible: z.boolean().nullable(),
-  taxRegime: z.enum(['old_regime', 'new_regime']).nullable(),
+  bonusIncludedInCtc: z.boolean(),
+  isPfEligible: z.boolean(),
+  isEsiEligible: z.boolean(),
+  salaryStructureType: z.enum(['range_based', 'fixed']),
+  taxRegime: z.enum(['old_regime', 'new_regime']),
+  showDetailedBreakup: z.boolean(),
   breakup: z.array(breakupItemSchema),
 });
 
@@ -134,13 +140,19 @@ export type CompensationFormValues = z.infer<typeof compensationSchema>;
 
 export const compensationDefaults: CompensationFormValues = {
   enablePayroll: true,
+  payGroup: null,
   annualSalary: null,
+  salaryPeriod: 'per_annum',
   currency: 'INR',
   salaryEffectiveFrom: null,
   regularSalary: null,
   bonus: null,
+  bonusIncludedInCtc: false,
+  isPfEligible: false,
   isEsiEligible: false,
+  salaryStructureType: 'range_based',
   taxRegime: 'new_regime',
+  showDetailedBreakup: false,
   breakup: [],
 };
 
@@ -197,7 +209,12 @@ export function buildOnboardingPayload(data: {
   }
 
   if (data.compensation?.enablePayroll) {
-    const { enablePayroll: _enablePayroll, ...rest } = data.compensation;
+    const {
+      enablePayroll: _enablePayroll,
+      salaryPeriod: _salaryPeriod,
+      showDetailedBreakup: _showDetailedBreakup,
+      ...rest
+    } = data.compensation;
     const cleaned = stripNulls(rest);
     if (Object.keys(cleaned).length > 0) {
       payload.compensation = cleaned;

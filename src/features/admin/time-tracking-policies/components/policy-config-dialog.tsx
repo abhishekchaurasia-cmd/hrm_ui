@@ -3,6 +3,7 @@
 import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -13,6 +14,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
 
 import { useUpdateTimeTrackingPolicy } from '../hooks/use-time-tracking-policies';
 
@@ -46,23 +48,7 @@ function Toggle({
   checked: boolean;
   onChange: (val: boolean) => void;
 }) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      onClick={() => onChange(!checked)}
-      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors ${
-        checked ? 'bg-primary' : 'bg-muted'
-      }`}
-    >
-      <span
-        className={`pointer-events-none inline-block size-5 rounded-full bg-white shadow-lg ring-0 transition-transform ${
-          checked ? 'translate-x-5' : 'translate-x-0'
-        }`}
-      />
-    </button>
-  );
+  return <Switch checked={checked} onCheckedChange={onChange} />;
 }
 
 function NumberField({
@@ -233,15 +219,14 @@ export function PolicyConfigDialog({
                 {capture.webClockIn.enabled && (
                   <div className="ml-4 flex flex-col gap-3">
                     <label className="flex items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
+                      <Checkbox
                         checked={capture.webClockIn.commentMandatory}
-                        onChange={e =>
+                        onCheckedChange={v =>
                           setCapture(prev => ({
                             ...prev,
                             webClockIn: {
                               ...prev.webClockIn,
-                              commentMandatory: e.target.checked,
+                              commentMandatory: v as boolean,
                             },
                           }))
                         }
@@ -249,15 +234,14 @@ export function PolicyConfigDialog({
                       Comment is mandatory at the time of first clock-in
                     </label>
                     <label className="flex items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
+                      <Checkbox
                         checked={capture.webClockIn.ipRestrictionEnabled}
-                        onChange={e =>
+                        onCheckedChange={v =>
                           setCapture(prev => ({
                             ...prev,
                             webClockIn: {
                               ...prev.webClockIn,
-                              ipRestrictionEnabled: e.target.checked,
+                              ipRestrictionEnabled: v as boolean,
                             },
                           }))
                         }
@@ -292,15 +276,14 @@ export function PolicyConfigDialog({
                 {capture.remoteClockIn.enabled && (
                   <div className="ml-4">
                     <label className="flex items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
+                      <Checkbox
                         checked={capture.remoteClockIn.ipRestrictionEnabled}
-                        onChange={e =>
+                        onCheckedChange={v =>
                           setCapture(prev => ({
                             ...prev,
                             remoteClockIn: {
                               ...prev.remoteClockIn,
-                              ipRestrictionEnabled: e.target.checked,
+                              ipRestrictionEnabled: v as boolean,
                             },
                           }))
                         }
@@ -502,13 +485,12 @@ export function PolicyConfigDialog({
                     />
                     <div className="col-span-2">
                       <label className="flex items-center gap-2 text-sm">
-                        <input
-                          type="checkbox"
+                        <Checkbox
                           checked={regularization.reasonRequired}
-                          onChange={e =>
+                          onCheckedChange={v =>
                             setRegularization(prev => ({
                               ...prev,
-                              reasonRequired: e.target.checked,
+                              reasonRequired: v as boolean,
                             }))
                           }
                         />
@@ -588,15 +570,14 @@ export function PolicyConfigDialog({
 
                     <div className="flex flex-col gap-3">
                       <label className="flex items-center gap-2 text-sm">
-                        <input
-                          type="checkbox"
+                        <Checkbox
                           checked={partial.lateArrival.enabled}
-                          onChange={e =>
+                          onCheckedChange={v =>
                             setPartial(prev => ({
                               ...prev,
                               lateArrival: {
                                 ...prev.lateArrival,
-                                enabled: e.target.checked,
+                                enabled: v as boolean,
                               },
                             }))
                           }
@@ -623,15 +604,14 @@ export function PolicyConfigDialog({
                       )}
 
                       <label className="flex items-center gap-2 text-sm">
-                        <input
-                          type="checkbox"
+                        <Checkbox
                           checked={partial.earlyLeaving.enabled}
-                          onChange={e =>
+                          onCheckedChange={v =>
                             setPartial(prev => ({
                               ...prev,
                               earlyLeaving: {
                                 ...prev.earlyLeaving,
-                                enabled: e.target.checked,
+                                enabled: v as boolean,
                               },
                             }))
                           }
@@ -658,15 +638,14 @@ export function PolicyConfigDialog({
                       )}
 
                       <label className="flex items-center gap-2 text-sm">
-                        <input
-                          type="checkbox"
+                        <Checkbox
                           checked={partial.interveningTimeOff.enabled}
-                          onChange={e =>
+                          onCheckedChange={v =>
                             setPartial(prev => ({
                               ...prev,
                               interveningTimeOff: {
                                 ...prev.interveningTimeOff,
-                                enabled: e.target.checked,
+                                enabled: v as boolean,
                               },
                             }))
                           }
@@ -723,26 +702,24 @@ export function PolicyConfigDialog({
                     </div>
 
                     <label className="flex items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
+                      <Checkbox
                         checked={partial.commentMandatory}
-                        onChange={e =>
+                        onCheckedChange={v =>
                           setPartial(prev => ({
                             ...prev,
-                            commentMandatory: e.target.checked,
+                            commentMandatory: v as boolean,
                           }))
                         }
                       />
                       Comment is mandatory when raising request
                     </label>
                     <label className="flex items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
+                      <Checkbox
                         checked={partial.allowPastDated}
-                        onChange={e =>
+                        onCheckedChange={v =>
                           setPartial(prev => ({
                             ...prev,
-                            allowPastDated: e.target.checked,
+                            allowPastDated: v as boolean,
                           }))
                         }
                       />
@@ -879,26 +856,24 @@ export function PolicyConfigDialog({
                     <Separator />
 
                     <label className="flex items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
+                      <Checkbox
                         checked={approval.autoApproveIfMissing}
-                        onChange={e =>
+                        onCheckedChange={v =>
                           setApproval(prev => ({
                             ...prev,
-                            autoApproveIfMissing: e.target.checked,
+                            autoApproveIfMissing: v as boolean,
                           }))
                         }
                       />
                       Auto-approve if approver is missing
                     </label>
                     <label className="flex items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
+                      <Checkbox
                         checked={approval.skipApprovalForEveryRequest}
-                        onChange={e =>
+                        onCheckedChange={v =>
                           setApproval(prev => ({
                             ...prev,
-                            skipApprovalForEveryRequest: e.target.checked,
+                            skipApprovalForEveryRequest: v as boolean,
                           }))
                         }
                       />

@@ -14,6 +14,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Pagination } from '@/components/ui/pagination';
 import {
   Table,
   TableBody,
@@ -34,7 +35,12 @@ interface PolicyEmployeesTabProps {
 }
 
 export function PolicyEmployeesTab({ policyId }: PolicyEmployeesTabProps) {
-  const { data, isLoading } = useTimeTrackingPolicyAssignments(policyId);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
+  const { data, isLoading } = useTimeTrackingPolicyAssignments(policyId, {
+    page,
+    limit,
+  });
   const unassignMutation = useUnassignEmployeeFromPolicy(policyId);
   const [showAssignDialog, setShowAssignDialog] = useState(false);
   const [unassignTarget, setUnassignTarget] = useState<{
@@ -43,7 +49,10 @@ export function PolicyEmployeesTab({ policyId }: PolicyEmployeesTabProps) {
   } | null>(null);
   const [search, setSearch] = useState('');
 
-  const assignments = data?.data ?? [];
+  const paginated = data?.data;
+  const assignments = paginated?.items ?? [];
+  const total = paginated?.total ?? 0;
+  const totalPages = paginated?.totalPages ?? 1;
   const filtered = assignments.filter(a => {
     if (!search) return true;
     const name =
@@ -124,6 +133,19 @@ export function PolicyEmployeesTab({ policyId }: PolicyEmployeesTabProps) {
               ))}
             </TableBody>
           </Table>
+          {!isLoading && total > 0 && (
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              total={total}
+              limit={limit}
+              onPageChange={setPage}
+              onLimitChange={v => {
+                setLimit(v);
+                setPage(1);
+              }}
+            />
+          )}
         </div>
       )}
 

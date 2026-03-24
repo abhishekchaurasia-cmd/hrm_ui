@@ -1,6 +1,9 @@
 import {
+  Building2,
   CalendarDays,
   Clock,
+  ClipboardCheck,
+  FileSpreadsheet,
   Globe,
   LayoutDashboard,
   Settings,
@@ -56,6 +59,13 @@ export const sidebarConfig: SidebarMenuSection[] = [
         label: 'Attendance',
         icon: Clock,
         href: '/dashboard/attendance',
+      },
+      {
+        id: 'regularization',
+        label: 'Regularization',
+        icon: ClipboardCheck,
+        href: '/dashboard/regularization',
+        roles: ['employee'],
       },
       {
         id: 'leave',
@@ -170,10 +180,31 @@ export const sidebarConfig: SidebarMenuSection[] = [
         roles: ['hr'],
       },
       {
+        id: 'admin-regularization-requests',
+        label: 'Regularization Requests',
+        icon: ClipboardCheck,
+        href: '/dashboard/admin/regularization-requests',
+        roles: ['hr'],
+      },
+      {
         id: 'admin-holidays',
         label: 'Holidays',
         icon: Globe,
         href: '/settings/holidays',
+        roles: ['hr'],
+      },
+      {
+        id: 'admin-payroll-reports',
+        label: 'Payroll Reports',
+        icon: FileSpreadsheet,
+        href: '/dashboard/admin/payroll-reports',
+        roles: ['hr'],
+      },
+      {
+        id: 'admin-organization',
+        label: 'Organization',
+        icon: Building2,
+        href: '/dashboard/admin/organization',
         roles: ['hr'],
       },
       {

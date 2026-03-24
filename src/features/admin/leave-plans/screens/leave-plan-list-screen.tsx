@@ -2,7 +2,7 @@
 
 import { Plus, Pencil, Trash2, FileText } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import { Badge } from '@/components/ui/badge';
@@ -16,6 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Pagination, type PaginatedResponse } from '@/components/ui/pagination';
 import {
   Table,
   TableBody,
@@ -35,23 +36,30 @@ export function LeavePlanListScreen() {
   const [error, setError] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<LeavePlan | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
 
-  const fetchPlans = async () => {
+  const fetchPlans = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await getLeavePlans();
-      setPlans(res.data);
+      const res = await getLeavePlans({ page, limit });
+      const paginated = res.data as unknown as PaginatedResponse<LeavePlan>;
+      setPlans(paginated.items);
+      setTotal(paginated.total);
+      setTotalPages(paginated.totalPages);
     } catch {
       setError('Failed to load leave plans');
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [page, limit]);
 
   useEffect(() => {
     void fetchPlans();
-  }, []);
+  }, [fetchPlans]);
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
@@ -112,61 +120,73 @@ export function LeavePlanListScreen() {
               </Button>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Year</TableHead>
-                  <TableHead>Period</TableHead>
-                  <TableHead>Leave Types</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {plans.map(plan => (
-                  <TableRow key={plan.id}>
-                    <TableCell className="font-medium">{plan.name}</TableCell>
-                    <TableCell>{plan.year}</TableCell>
-                    <TableCell>
-                      {plan.startDate} — {plan.endDate}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="secondary">
-                        {plan.leaveTypeConfigs?.length ?? 0} types
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={plan.isActive ? 'success' : 'secondary'}>
-                        {plan.isActive ? 'Active' : 'Inactive'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon-xs"
-                          onClick={() =>
-                            router.push(
-                              `/dashboard/admin/leave-plans/${plan.id}`
-                            )
-                          }
-                        >
-                          <Pencil className="size-3.5" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon-xs"
-                          onClick={() => setDeleteTarget(plan)}
-                        >
-                          <Trash2 className="text-destructive size-3.5" />
-                        </Button>
-                      </div>
-                    </TableCell>
+            <>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Year</TableHead>
+                    <TableHead>Period</TableHead>
+                    <TableHead>Leave Types</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {plans.map(plan => (
+                    <TableRow key={plan.id}>
+                      <TableCell className="font-medium">{plan.name}</TableCell>
+                      <TableCell>{plan.year}</TableCell>
+                      <TableCell>
+                        {plan.startDate} — {plan.endDate}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="secondary">
+                          {plan.leaveTypeConfigs?.length ?? 0} types
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={plan.isActive ? 'success' : 'secondary'}
+                        >
+                          {plan.isActive ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon-xs"
+                            onClick={() =>
+                              router.push(
+                                `/dashboard/admin/leave-plans/${plan.id}`
+                              )
+                            }
+                          >
+                            <Pencil className="size-3.5" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon-xs"
+                            onClick={() => setDeleteTarget(plan)}
+                          >
+                            <Trash2 className="text-destructive size-3.5" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              <Pagination
+                page={page}
+                totalPages={totalPages}
+                total={total}
+                limit={limit}
+                onPageChange={setPage}
+                onLimitChange={setLimit}
+              />
+            </>
           )}
         </CardContent>
       </Card>

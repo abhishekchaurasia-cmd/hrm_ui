@@ -1,10 +1,8 @@
 'use client';
 
-import { X } from 'lucide-react';
 import { useState } from 'react';
 
-import { EmployeeSelect } from '@/components/employee-select';
-import { Badge } from '@/components/ui/badge';
+import { EmployeeMultiSelect } from '@/components/employee-multi-select';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -29,26 +27,13 @@ export function AssignEmployeesDialog({
   onOpenChange,
 }: AssignEmployeesDialogProps) {
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
-  const [currentSelection, setCurrentSelection] = useState('');
   const mutation = useAssignEmployees(policyId);
 
   const handleOpenChange = (nextOpen: boolean) => {
     if (!nextOpen) {
       setSelectedUsers([]);
-      setCurrentSelection('');
     }
     onOpenChange(nextOpen);
-  };
-
-  const handleAddUser = (userId: string) => {
-    if (userId && !selectedUsers.includes(userId)) {
-      setSelectedUsers(prev => [...prev, userId]);
-    }
-    setCurrentSelection('');
-  };
-
-  const handleRemoveUser = (userId: string) => {
-    setSelectedUsers(prev => prev.filter(id => id !== userId));
   };
 
   const handleSubmit = () => {
@@ -74,27 +59,11 @@ export function AssignEmployeesDialog({
         </DialogHeader>
 
         <div className="flex flex-col gap-4">
-          <EmployeeSelect
-            value={currentSelection}
-            onValueChange={handleAddUser}
-            placeholder="Search and add employees..."
+          <EmployeeMultiSelect
+            value={selectedUsers}
+            onValueChange={setSelectedUsers}
+            placeholder="Search and select employees..."
           />
-
-          {selectedUsers.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {selectedUsers.map(userId => (
-                <Badge key={userId} variant="secondary" className="gap-1">
-                  {userId.slice(0, 8)}...
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveUser(userId)}
-                  >
-                    <X className="size-3" />
-                  </button>
-                </Badge>
-              ))}
-            </div>
-          )}
 
           <p className="text-muted-foreground text-xs">
             {selectedUsers.length} employee(s) selected

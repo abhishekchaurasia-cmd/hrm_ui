@@ -5,10 +5,16 @@ import {
   ChevronLeft,
   ChevronRight,
   Gift,
+  GraduationCap,
+  Handshake,
+  Heart,
+  Laugh,
+  Music,
   PartyPopper,
+  Sparkles,
+  Star,
   Trophy,
   Users,
-  Heart,
 } from 'lucide-react';
 import { type LucideIcon } from 'lucide-react';
 import Image from 'next/image';
@@ -29,20 +35,20 @@ interface GallerySlide {
 /**
  * To add images from Google Drive:
  * 1. Upload your image to the shared Drive folder
- * 2. Right-click the file -> "Get link" -> copy the link
- * 3. Extract the file ID from the URL (the part between /d/ and /view)
- * 4. Use this format: https://drive.google.com/uc?export=view&id=YOUR_FILE_ID
+ * 2. Right-click the file -> Share -> "Anyone with the link" (Viewer)
+ * 3. Copy the link and extract the file ID (the part between /d/ and /view)
+ * 4. Pass the file ID to driveUrl() below
  *
  * You can also use local images from public/images/landing/ if preferred.
  */
 function driveUrl(fileId: string): string {
-  return `https://drive.google.com/uc?export=view&id=${fileId}`;
+  return `https://lh3.googleusercontent.com/d/${fileId}`;
 }
 
 const slides: GallerySlide[] = [
   {
     id: 'celebration',
-    src: null,
+    src: driveUrl('1J2lBYvfL7cqCpPKm1B-jTEa4L14_FTtH'),
     alt: 'Team celebration at CopanDigital',
     icon: PartyPopper,
     label: 'Celebrations',
@@ -58,7 +64,7 @@ const slides: GallerySlide[] = [
   },
   {
     id: 'awards',
-    src: null,
+    src: driveUrl('13WBH-OLSkmC8uvffA_eCK7tTZxIwGKek'),
     alt: 'Award ceremony at CopanDigital',
     icon: Trophy,
     label: 'Achievements',
@@ -66,7 +72,7 @@ const slides: GallerySlide[] = [
   },
   {
     id: 'events',
-    src: null,
+    src: driveUrl('1w4uHnu5CY1Y_U8Xud_CXaIPAVJi1itN3'),
     alt: 'Company event and fun activities',
     icon: Gift,
     label: 'Company Events',
@@ -74,15 +80,63 @@ const slides: GallerySlide[] = [
   },
   {
     id: 'culture',
-    src: null,
-    alt: 'Our culture and values',
+    src: driveUrl('1e92LEg20MLYiP2keUJ62ueKhJMWK0tNA'),
+    alt: 'Our culture and values at CopanDigital',
     icon: Heart,
     label: 'Our Culture',
     description: 'Values that define who we are.',
   },
   {
+    id: 'together',
+    src: driveUrl('1LWgKGpAw5K3jV7eMU7gXbFfGuWGd95nE'),
+    alt: 'Team bonding at CopanDigital',
+    icon: Handshake,
+    label: 'Better Together',
+    description: 'Stronger connections, stronger team.',
+  },
+  {
+    id: 'fun',
+    src: driveUrl('1tZ4dXoarvgQfucXV9KHIzirw8u-5PCoT'),
+    alt: 'Fun moments at CopanDigital',
+    icon: Laugh,
+    label: 'Fun at Work',
+    description: 'Because work should be enjoyable too.',
+  },
+  {
+    id: 'vibes',
+    src: driveUrl('1v8q1UZFplagZgHk2az0vGsLsdWn_9v9L'),
+    alt: 'Good vibes at CopanDigital',
+    icon: Music,
+    label: 'Good Vibes',
+    description: 'Energy that keeps us going.',
+  },
+  {
+    id: 'growth',
+    src: driveUrl('1tZMTuM009MIY2AN2-5qB7BukmFoQ638x'),
+    alt: 'Learning and growth at CopanDigital',
+    icon: GraduationCap,
+    label: 'Growth',
+    description: 'Always learning, always growing.',
+  },
+  {
+    id: 'highlights',
+    src: driveUrl('15sGwKmO4gi-PyTGp7-phm8gwcm6ImeTL'),
+    alt: 'Highlights from CopanDigital',
+    icon: Star,
+    label: 'Highlights',
+    description: 'The best moments captured forever.',
+  },
+  {
+    id: 'spark',
+    src: driveUrl('1PH1b18AP2bLjX_11XJuv-dNz2xGwq_9T'),
+    alt: 'Sparking creativity at CopanDigital',
+    icon: Sparkles,
+    label: 'Spark',
+    description: 'Where creativity meets passion.',
+  },
+  {
     id: 'moments',
-    src: null,
+    src: driveUrl('1OrW9zQpCKQtPQ14-ZTwVN_EBNcLvsuOR'),
     alt: 'Memorable moments at CopanDigital',
     icon: Camera,
     label: 'Moments',
@@ -90,26 +144,14 @@ const slides: GallerySlide[] = [
   },
 ];
 
-const gradients: Record<string, string> = {
-  celebration: 'from-orange-500 via-amber-500 to-yellow-500',
-  teamwork: 'from-blue-500 via-cyan-500 to-teal-500',
-  awards: 'from-amber-500 via-orange-500 to-red-500',
-  events: 'from-violet-500 via-purple-500 to-fuchsia-500',
-  culture: 'from-rose-500 via-pink-500 to-red-500',
-  moments: 'from-emerald-500 via-teal-500 to-cyan-500',
-};
-
 const AUTOPLAY_MS = 5000;
 
 function SlideContent({ slide }: { slide: GallerySlide }) {
   const Icon = slide.icon;
-  const gradient = gradients[slide.id] ?? 'from-orange-500 to-amber-500';
 
-  const isExternal = slide.src?.startsWith('http');
-
-  if (slide.src) {
-    return (
-      <div className="relative size-full">
+  return (
+    <div className="relative size-full">
+      {slide.src ? (
         <Image
           src={slide.src}
           alt={slide.alt}
@@ -117,60 +159,22 @@ function SlideContent({ slide }: { slide: GallerySlide }) {
           className="object-cover"
           sizes="(max-width: 768px) 100vw, 80vw"
           priority
-          unoptimized={isExternal}
+          unoptimized
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-        <div className="absolute inset-x-0 bottom-0 flex items-end p-6 sm:p-10">
-          <div className="flex items-center gap-4 text-white">
-            <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm">
-              <Icon className="size-6" />
-            </div>
-            <div>
-              <h3 className="text-xl font-bold sm:text-2xl">{slide.label}</h3>
-              <p className="mt-1 text-sm text-white/80">{slide.description}</p>
-            </div>
+      ) : (
+        <div className="absolute inset-0 bg-gradient-to-br from-orange-500 to-amber-500" />
+      )}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+      <div className="absolute inset-x-0 bottom-0 flex items-end p-6 sm:p-10">
+        <div className="flex items-center gap-4 text-white">
+          <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm">
+            <Icon className="size-6" />
+          </div>
+          <div>
+            <h3 className="text-xl font-bold sm:text-2xl">{slide.label}</h3>
+            <p className="mt-1 text-sm text-white/80">{slide.description}</p>
           </div>
         </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="relative size-full">
-      <div className={`absolute inset-0 bg-gradient-to-br ${gradient}`} />
-
-      {/* Dot pattern */}
-      <div className="absolute inset-0 opacity-10">
-        <svg className="size-full" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <pattern
-              id={`carousel-dots-${slide.id}`}
-              x="0"
-              y="0"
-              width="24"
-              height="24"
-              patternUnits="userSpaceOnUse"
-            >
-              <circle cx="2" cy="2" r="1.5" fill="white" />
-            </pattern>
-          </defs>
-          <rect
-            width="100%"
-            height="100%"
-            fill={`url(#carousel-dots-${slide.id})`}
-          />
-        </svg>
-      </div>
-
-      <div className="relative flex size-full flex-col items-center justify-center gap-4 text-white">
-        <div className="flex size-20 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm">
-          <Icon className="size-10" />
-        </div>
-        <h3 className="text-2xl font-bold sm:text-3xl">{slide.label}</h3>
-        <p className="text-sm text-white/80">{slide.description}</p>
-        <span className="mt-2 rounded-full bg-white/15 px-4 py-1.5 text-xs font-medium backdrop-blur-sm">
-          Add your photo here
-        </span>
       </div>
     </div>
   );
@@ -289,7 +293,7 @@ export function GallerySection() {
         </div>
 
         <p className="text-muted-foreground mt-6 text-center text-xs">
-          Photos coming soon — share your favorite CopanDigital moments!
+          Share your favorite CopanDigital moments with us!
         </p>
       </div>
     </section>

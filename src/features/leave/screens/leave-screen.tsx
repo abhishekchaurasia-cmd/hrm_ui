@@ -3,7 +3,7 @@
 import axios from 'axios';
 import { CalendarDays, PlusCircle, Send, XCircle } from 'lucide-react';
 import { useSession } from 'next-auth/react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import { Badge } from '@/components/ui/badge';
@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Pagination } from '@/components/ui/pagination';
 import {
   Select,
   SelectContent,
@@ -88,7 +89,7 @@ function BalanceProgress({
 }) {
   const pct = allocated > 0 ? Math.min((used / allocated) * 100, 100) : 0;
   return (
-    <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-neutral-800">
+    <div className="bg-muted mt-2 h-2 w-full overflow-hidden rounded-full">
       <div
         className="h-full rounded-full bg-orange-500 transition-all"
         style={{ width: `${pct}%` }}
@@ -115,6 +116,17 @@ export function LeaveScreen() {
   const [statusFilter, setStatusFilter] = useState<LeaveRequestStatus | 'all'>(
     'all'
   );
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [statusCounts, setStatusCounts] = useState<Record<string, number>>({
+    all: 0,
+    pending: 0,
+    approved: 0,
+    rejected: 0,
+    cancelled: 0,
+  });
 
   const [form, setForm] = useState({
     leaveTypeConfigId: '',
@@ -133,7 +145,11 @@ export function LeaveScreen() {
         getMyLeaveBalances(selectedYear).catch(() => ({
           data: [] as LeaveBalance[],
         })),
-        getMyLeaveRequests().catch(() => ({
+        getMyLeaveRequests({
+          page,
+          limit,
+          status: statusFilter === 'all' ? undefined : statusFilter,
+        }).catch(() => ({
           data: {
             leaves: [] as LeaveRequest[],
             total: 0,
@@ -154,6 +170,11 @@ export function LeaveScreen() {
         Array.isArray(leaveData.leaves)
       ) {
         setLeaves(leaveData.leaves);
+        setTotal(leaveData.total ?? 0);
+        setTotalPages(leaveData.totalPages ?? 1);
+        if (leaveData.statusCounts) {
+          setStatusCounts(leaveData.statusCounts);
+        }
       } else if (Array.isArray(leaveData)) {
         setLeaves(leaveData);
       } else {
@@ -164,7 +185,7 @@ export function LeaveScreen() {
     } finally {
       setIsLoading(false);
     }
-  }, [session?.user, selectedYear]);
+  }, [session?.user, selectedYear, page, limit, statusFilter]);
 
   useEffect(() => {
     void fetchData();
@@ -252,15 +273,7 @@ export function LeaveScreen() {
 
   const yearOptions = Array.from({ length: 3 }, (_, i) => currentYear - 1 + i);
 
-  const filteredLeaves = useMemo(
-    () =>
-      statusFilter === 'all'
-        ? leaves
-        : leaves.filter(l => l.status === statusFilter),
-    [leaves, statusFilter]
-  );
-
-  const pendingCount = leaves.filter(l => l.status === 'pending').length;
+  const pendingCount = statusCounts.pending ?? 0;
 
   if (isHrUser) {
     return <LeaveRequestsScreen />;
@@ -422,21 +435,20 @@ export function LeaveScreen() {
               {STATUS_FILTERS.map(f => (
                 <button
                   key={f.value}
-                  onClick={() => setStatusFilter(f.value)}
+                  onClick={() => {
+                    setStatusFilter(f.value);
+                    setPage(1);
+                  }}
                   className={`rounded-full border px-3.5 py-1 text-xs font-medium transition-colors ${
                     statusFilter === f.value
                       ? 'border-orange-500 bg-orange-500/10 text-orange-500'
-                      : 'border-neutral-700 text-neutral-400 hover:border-neutral-500 hover:text-neutral-200'
+                      : 'border-border text-muted-foreground hover:border-primary/50 hover:text-foreground'
                   }`}
                 >
                   {f.label}
                   {f.value !== 'all' && (
                     <span className="ml-1.5 opacity-70">
-                      {
-                        leaves.filter(l =>
-                          f.value === 'all' ? true : l.status === f.value
-                        ).length
-                      }
+                      {statusCounts[f.value] ?? 0}
                     </span>
                   )}
                 </button>
@@ -452,90 +464,105 @@ export function LeaveScreen() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {filteredLeaves.length === 0 ? (
+                {leaves.length === 0 ? (
                   <p className="text-muted-foreground py-8 text-center text-sm">
                     {statusFilter === 'all'
                       ? 'No leave requests yet.'
                       : `No ${statusFilter} leave requests.`}
                   </p>
                 ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Leave Type</TableHead>
-                        <TableHead>Period</TableHead>
-                        <TableHead>Days</TableHead>
-                        <TableHead>Reason</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Applied On</TableHead>
-                        <TableHead />
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredLeaves.map(l => (
-                        <TableRow key={l.id}>
-                          <TableCell>
-                            <div className="flex flex-col gap-0.5">
-                              {l.leaveTypeConfig ? (
-                                <Badge variant="outline" className="w-fit">
-                                  {l.leaveTypeConfig.name}
-                                </Badge>
-                              ) : (
-                                <span className="text-muted-foreground text-xs">
-                                  {l.leaveType ?? '-'}
-                                </span>
-                              )}
-                              {l.isHalfDay && (
-                                <span className="text-muted-foreground text-[10px]">
-                                  {l.halfDayType === 'first_half'
-                                    ? 'First Half'
-                                    : 'Second Half'}
-                                </span>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-sm whitespace-nowrap">
-                            {formatDate(l.startDate)}
-                            {l.startDate !== l.endDate &&
-                              ` — ${formatDate(l.endDate)}`}
-                          </TableCell>
-                          <TableCell className="font-medium">
-                            {l.numberOfDays}
-                          </TableCell>
-                          <TableCell className="max-w-[200px] truncate text-sm">
-                            {l.reason || '-'}
-                          </TableCell>
-                          <TableCell>
-                            <Badge
-                              variant={STATUS_VARIANTS[l.status] ?? 'secondary'}
-                            >
-                              {l.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-muted-foreground text-xs">
-                            {formatDate(l.createdAt)}
-                          </TableCell>
-                          <TableCell>
-                            {(l.status === 'pending' ||
-                              l.status === 'approved') && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="text-destructive hover:text-destructive h-7 gap-1 px-2 text-xs"
-                                disabled={cancellingId === l.id}
-                                onClick={() => void handleCancel(l.id)}
-                              >
-                                <XCircle className="size-3" />
-                                {cancellingId === l.id
-                                  ? 'Cancelling...'
-                                  : 'Cancel'}
-                              </Button>
-                            )}
-                          </TableCell>
+                  <>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Leave Type</TableHead>
+                          <TableHead>Period</TableHead>
+                          <TableHead>Days</TableHead>
+                          <TableHead>Reason</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Applied On</TableHead>
+                          <TableHead />
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {leaves.map(l => (
+                          <TableRow key={l.id}>
+                            <TableCell>
+                              <div className="flex flex-col gap-0.5">
+                                {l.leaveTypeConfig ? (
+                                  <Badge variant="outline" className="w-fit">
+                                    {l.leaveTypeConfig.name}
+                                  </Badge>
+                                ) : (
+                                  <span className="text-muted-foreground text-xs">
+                                    {l.leaveType ?? '-'}
+                                  </span>
+                                )}
+                                {l.isHalfDay && (
+                                  <span className="text-muted-foreground text-[10px]">
+                                    {l.halfDayType === 'first_half'
+                                      ? 'First Half'
+                                      : 'Second Half'}
+                                  </span>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-sm whitespace-nowrap">
+                              {formatDate(l.startDate)}
+                              {l.startDate !== l.endDate &&
+                                ` — ${formatDate(l.endDate)}`}
+                            </TableCell>
+                            <TableCell className="font-medium">
+                              {l.numberOfDays}
+                            </TableCell>
+                            <TableCell className="max-w-[200px] truncate text-sm">
+                              {l.reason || '-'}
+                            </TableCell>
+                            <TableCell>
+                              <Badge
+                                variant={
+                                  STATUS_VARIANTS[l.status] ?? 'secondary'
+                                }
+                              >
+                                {l.status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-muted-foreground text-xs">
+                              {formatDate(l.createdAt)}
+                            </TableCell>
+                            <TableCell>
+                              {(l.status === 'pending' ||
+                                l.status === 'approved') && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-destructive hover:text-destructive h-7 gap-1 px-2 text-xs"
+                                  disabled={cancellingId === l.id}
+                                  onClick={() => void handleCancel(l.id)}
+                                >
+                                  <XCircle className="size-3" />
+                                  {cancellingId === l.id
+                                    ? 'Cancelling...'
+                                    : 'Cancel'}
+                                </Button>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                    <Pagination
+                      page={page}
+                      totalPages={totalPages}
+                      total={total}
+                      limit={limit}
+                      onPageChange={setPage}
+                      onLimitChange={v => {
+                        setLimit(v);
+                        setPage(1);
+                      }}
+                    />
+                  </>
                 )}
               </CardContent>
             </Card>
@@ -602,7 +629,7 @@ export function LeaveScreen() {
                   className={`rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
                     !form.isHalfDay
                       ? 'border-orange-500 bg-orange-500/10 text-orange-500'
-                      : 'border-neutral-700 text-neutral-400 hover:border-neutral-500'
+                      : 'border-border text-muted-foreground hover:border-primary/50'
                   }`}
                 >
                   Full Day
@@ -619,7 +646,7 @@ export function LeaveScreen() {
                   className={`rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
                     form.isHalfDay
                       ? 'border-orange-500 bg-orange-500/10 text-orange-500'
-                      : 'border-neutral-700 text-neutral-400 hover:border-neutral-500'
+                      : 'border-border text-muted-foreground hover:border-primary/50'
                   }`}
                 >
                   Half Day

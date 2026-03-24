@@ -2,7 +2,7 @@
 
 import { Plus, Pencil, Trash2, Clock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import { Badge } from '@/components/ui/badge';
@@ -16,6 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Pagination, type PaginatedResponse } from '@/components/ui/pagination';
 import {
   Table,
   TableBody,
@@ -42,23 +43,30 @@ export function ShiftListScreen() {
   const [error, setError] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Shift | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
 
-  const fetchShifts = async () => {
+  const fetchShifts = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await getShifts();
-      setShifts(res.data);
+      const res = await getShifts({ page, limit });
+      const data = res.data as unknown as PaginatedResponse<Shift>;
+      setShifts(data.items);
+      setTotal(data.total);
+      setTotalPages(data.totalPages);
     } catch {
       setError('Failed to load shifts');
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [page, limit]);
 
   useEffect(() => {
     void fetchShifts();
-  }, []);
+  }, [fetchShifts]);
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
@@ -119,71 +127,83 @@ export function ShiftListScreen() {
               </Button>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Code</TableHead>
-                  <TableHead>Timing</TableHead>
-                  <TableHead>Work Hours</TableHead>
-                  <TableHead>Grace</TableHead>
-                  <TableHead>Weekly Offs</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {shifts.map(shift => (
-                  <TableRow key={shift.id}>
-                    <TableCell className="font-medium">
-                      {shift.name}
-                      {shift.isDefault && (
-                        <Badge variant="secondary" className="ml-2">
-                          Default
-                        </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <code className="bg-muted rounded px-1.5 py-0.5 text-xs">
-                        {shift.code}
-                      </code>
-                    </TableCell>
-                    <TableCell>
-                      {shift.startTime.slice(0, 5)} -{' '}
-                      {shift.endTime.slice(0, 5)}
-                    </TableCell>
-                    <TableCell>{Number(shift.workHoursPerDay)}h</TableCell>
-                    <TableCell>{shift.graceMinutes}m</TableCell>
-                    <TableCell>{formatWeeklyOffs(shift)}</TableCell>
-                    <TableCell>
-                      <Badge variant={shift.isActive ? 'success' : 'secondary'}>
-                        {shift.isActive ? 'Active' : 'Inactive'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon-xs"
-                          onClick={() =>
-                            router.push(`/dashboard/admin/shifts/${shift.id}`)
-                          }
-                        >
-                          <Pencil className="size-3.5" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon-xs"
-                          onClick={() => setDeleteTarget(shift)}
-                        >
-                          <Trash2 className="text-destructive size-3.5" />
-                        </Button>
-                      </div>
-                    </TableCell>
+            <>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Code</TableHead>
+                    <TableHead>Timing</TableHead>
+                    <TableHead>Work Hours</TableHead>
+                    <TableHead>Grace</TableHead>
+                    <TableHead>Weekly Offs</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {shifts.map(shift => (
+                    <TableRow key={shift.id}>
+                      <TableCell className="font-medium">
+                        {shift.name}
+                        {shift.isDefault && (
+                          <Badge variant="secondary" className="ml-2">
+                            Default
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <code className="bg-muted rounded px-1.5 py-0.5 text-xs">
+                          {shift.code}
+                        </code>
+                      </TableCell>
+                      <TableCell>
+                        {shift.startTime.slice(0, 5)} -{' '}
+                        {shift.endTime.slice(0, 5)}
+                      </TableCell>
+                      <TableCell>{Number(shift.workHoursPerDay)}h</TableCell>
+                      <TableCell>{shift.graceMinutes}m</TableCell>
+                      <TableCell>{formatWeeklyOffs(shift)}</TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={shift.isActive ? 'success' : 'secondary'}
+                        >
+                          {shift.isActive ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon-xs"
+                            onClick={() =>
+                              router.push(`/dashboard/admin/shifts/${shift.id}`)
+                            }
+                          >
+                            <Pencil className="size-3.5" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon-xs"
+                            onClick={() => setDeleteTarget(shift)}
+                          >
+                            <Trash2 className="text-destructive size-3.5" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              <Pagination
+                page={page}
+                totalPages={totalPages}
+                total={total}
+                limit={limit}
+                onPageChange={setPage}
+                onLimitChange={setLimit}
+              />
+            </>
           )}
         </CardContent>
       </Card>
