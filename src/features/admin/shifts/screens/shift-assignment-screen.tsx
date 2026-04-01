@@ -5,7 +5,7 @@ import { Plus, Trash2, Users } from 'lucide-react';
 import { useEffect, useState, useCallback } from 'react';
 import { toast } from 'sonner';
 
-import { EmployeeSelect } from '@/components/employee-select';
+import { EmployeeMultiSelect } from '@/components/employee-multi-select';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Pagination, type PaginatedResponse } from '@/components/ui/pagination';
 import {
   Select,
   SelectContent,
@@ -47,6 +48,10 @@ export function ShiftAssignmentScreen() {
   const [assignments, setAssignments] = useState<ShiftAssignment[]>([]);
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [showDialog, setShowDialog] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<ShiftAssignment | null>(
@@ -54,7 +59,7 @@ export function ShiftAssignmentScreen() {
   );
 
   const [form, setForm] = useState({
-    userId: '',
+    userIds: [] as string[],
     shiftId: '',
     effectiveFrom: new Date().toISOString().split('T')[0],
     effectiveTo: '',
@@ -64,49 +69,75 @@ export function ShiftAssignmentScreen() {
     setIsLoading(true);
     try {
       const [assignRes, shiftRes] = await Promise.all([
-        getShiftAssignments(),
-        getShifts(),
+        getShiftAssignments({ page, limit }),
+        getShifts({ page: 1, limit: 100 }),
       ]);
-      setAssignments(assignRes.data);
-      setShifts(shiftRes.data);
+      const assignData =
+        assignRes.data as unknown as PaginatedResponse<ShiftAssignment>;
+      setAssignments(assignData.items);
+      setTotal(assignData.total);
+      setTotalPages(assignData.totalPages);
+      const shiftData = shiftRes.data as unknown as PaginatedResponse<Shift>;
+      setShifts(shiftData.items);
     } catch {
       toast.error('Failed to load data');
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [page, limit]);
 
   useEffect(() => {
     void fetchData();
   }, [fetchData]);
 
   const handleAssign = async () => {
-    if (!form.userId || !form.shiftId || !form.effectiveFrom) {
+    if (form.userIds.length === 0 || !form.shiftId || !form.effectiveFrom) {
       toast.error('Please fill in all required fields');
       return;
     }
     setIsSubmitting(true);
     try {
-      const res = await assignShift({
-        userId: form.userId,
-        shiftId: form.shiftId,
-        effectiveFrom: form.effectiveFrom,
-        effectiveTo: form.effectiveTo || null,
-      });
-      toast.success(res.message);
+      const results = await Promise.allSettled(
+        form.userIds.map(userId =>
+          assignShift({
+            userId,
+            shiftId: form.shiftId,
+            effectiveFrom: form.effectiveFrom,
+            effectiveTo: form.effectiveTo || null,
+          })
+        )
+      );
+
+      const succeeded = results.filter(r => r.status === 'fulfilled').length;
+      const failed = results.filter(r => r.status === 'rejected').length;
+
+      if (failed === 0) {
+        toast.success(`Shift assigned to ${succeeded} employee(s)`);
+      } else if (succeeded === 0) {
+        const firstErr = results.find(
+          r => r.status === 'rejected'
+        ) as PromiseRejectedResult;
+        const message = axios.isAxiosError(firstErr.reason)
+          ? (firstErr.reason.response?.data?.message ??
+            'Failed to assign shift')
+          : 'Failed to assign shift';
+        toast.error(message);
+      } else {
+        toast.warning(
+          `Assigned to ${succeeded} employee(s), failed for ${failed}`
+        );
+      }
+
       setShowDialog(false);
       setForm({
-        userId: '',
+        userIds: [],
         shiftId: '',
         effectiveFrom: new Date().toISOString().split('T')[0],
         effectiveTo: '',
       });
       void fetchData();
-    } catch (err: unknown) {
-      const message = axios.isAxiosError(err)
-        ? (err.response?.data?.message ?? 'Failed to assign shift')
-        : 'Failed to assign shift';
-      toast.error(message);
+    } catch {
+      toast.error('Failed to assign shift');
     } finally {
       setIsSubmitting(false);
     }
@@ -156,68 +187,78 @@ export function ShiftAssignmentScreen() {
               No shift assignments yet
             </p>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Employee</TableHead>
-                  <TableHead>Shift</TableHead>
-                  <TableHead>Effective From</TableHead>
-                  <TableHead>Effective To</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {assignments.map(a => (
-                  <TableRow key={a.id}>
-                    <TableCell>
-                      {a.user ? (
-                        <div>
-                          <p className="font-medium">
-                            {a.user.firstName} {a.user.lastName}
-                          </p>
-                          <p className="text-muted-foreground text-xs">
-                            {a.user.email}
-                          </p>
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground text-xs">
-                          {a.userId}
-                        </span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {a.shift ? (
-                        <div>
-                          <p className="font-medium">{a.shift.name}</p>
-                          <code className="text-muted-foreground text-xs">
-                            {a.shift.code}
-                          </code>
-                        </div>
-                      ) : (
-                        a.shiftId
-                      )}
-                    </TableCell>
-                    <TableCell>{a.effectiveFrom}</TableCell>
-                    <TableCell>{a.effectiveTo ?? '—'}</TableCell>
-                    <TableCell>
-                      <Badge variant={a.isActive ? 'success' : 'secondary'}>
-                        {a.isActive ? 'Active' : 'Inactive'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="icon-xs"
-                        onClick={() => setDeleteTarget(a)}
-                      >
-                        <Trash2 className="text-destructive size-3.5" />
-                      </Button>
-                    </TableCell>
+            <>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Employee</TableHead>
+                    <TableHead>Shift</TableHead>
+                    <TableHead>Effective From</TableHead>
+                    <TableHead>Effective To</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {assignments.map(a => (
+                    <TableRow key={a.id}>
+                      <TableCell>
+                        {a.user ? (
+                          <div>
+                            <p className="font-medium">
+                              {a.user.firstName} {a.user.lastName}
+                            </p>
+                            <p className="text-muted-foreground text-xs">
+                              {a.user.email}
+                            </p>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground text-xs">
+                            {a.userId}
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {a.shift ? (
+                          <div>
+                            <p className="font-medium">{a.shift.name}</p>
+                            <code className="text-muted-foreground text-xs">
+                              {a.shift.code}
+                            </code>
+                          </div>
+                        ) : (
+                          a.shiftId
+                        )}
+                      </TableCell>
+                      <TableCell>{a.effectiveFrom}</TableCell>
+                      <TableCell>{a.effectiveTo ?? '—'}</TableCell>
+                      <TableCell>
+                        <Badge variant={a.isActive ? 'success' : 'secondary'}>
+                          {a.isActive ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="ghost"
+                          size="icon-xs"
+                          onClick={() => setDeleteTarget(a)}
+                        >
+                          <Trash2 className="text-destructive size-3.5" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              <Pagination
+                page={page}
+                totalPages={totalPages}
+                total={total}
+                limit={limit}
+                onPageChange={setPage}
+                onLimitChange={setLimit}
+              />
+            </>
           )}
         </CardContent>
       </Card>
@@ -225,18 +266,18 @@ export function ShiftAssignmentScreen() {
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Assign Shift to Employee</DialogTitle>
+            <DialogTitle>Assign Shift to Employees</DialogTitle>
             <DialogDescription>
-              Select an employee and shift, then set the effective dates.
+              Select employees and a shift, then set the effective dates.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Employee</Label>
-              <EmployeeSelect
-                value={form.userId}
-                onValueChange={v => setForm(p => ({ ...p, userId: v }))}
-                placeholder="Select employee..."
+              <Label>Employees</Label>
+              <EmployeeMultiSelect
+                value={form.userIds}
+                onValueChange={v => setForm(p => ({ ...p, userIds: v }))}
+                placeholder="Select employees..."
               />
             </div>
             <div className="space-y-2">

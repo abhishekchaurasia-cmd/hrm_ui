@@ -14,10 +14,14 @@ interface ApiResponse<T> {
   data: T;
 }
 
-export async function getLeavePlans(): Promise<ApiResponse<LeavePlan[]>> {
+export async function getLeavePlans(params?: {
+  page?: number;
+  limit?: number;
+}): Promise<ApiResponse<LeavePlan[]>> {
   const res = await service({
     method: HttpMethod.GET,
     url: '/api/v1/leave-plans',
+    params: params as Record<string, unknown>,
   });
   return res.data as ApiResponse<LeavePlan[]>;
 }

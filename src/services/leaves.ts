@@ -54,12 +54,15 @@ export interface PaginatedLeaveResponse {
   statusCounts: Record<string, number>;
 }
 
-export async function getMyLeaveRequests(): Promise<
-  ApiResponse<PaginatedLeaveResponse>
-> {
+export async function getMyLeaveRequests(params?: {
+  page?: number;
+  limit?: number;
+  status?: string;
+}): Promise<ApiResponse<PaginatedLeaveResponse>> {
   const res = await service({
     method: HttpMethod.GET,
     url: '/api/v1/leaves/me',
+    params: params as Record<string, unknown>,
   });
   return res.data as ApiResponse<PaginatedLeaveResponse>;
 }
@@ -111,4 +114,25 @@ export async function rejectLeaveRequest(
     data: reviewNote ? { reviewNote } : undefined,
   });
   return res.data as ApiResponse<LeaveRequest>;
+}
+
+export interface TeamOnLeaveMember {
+  userId: string;
+  firstName: string;
+  lastName: string;
+  leaveType: string | null;
+  leaveTypeName: string | null;
+  startDate: string;
+  endDate: string;
+  isHalfDay: boolean;
+}
+
+export async function getTeamOnLeave(): Promise<
+  ApiResponse<TeamOnLeaveMember[]>
+> {
+  const res = await service({
+    method: HttpMethod.GET,
+    url: '/api/v1/leaves/team-on-leave',
+  });
+  return res.data as ApiResponse<TeamOnLeaveMember[]>;
 }

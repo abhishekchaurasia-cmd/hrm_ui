@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Pagination, type PaginatedResponse } from '@/components/ui/pagination';
 import {
   Table,
   TableBody,
@@ -41,6 +42,10 @@ export function LeaveBalanceListScreen() {
     String(new Date().getFullYear())
   );
   const [filterUserId, setFilterUserId] = useState('');
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
 
   const [showAdjust, setShowAdjust] = useState(false);
   const [adjustTarget, setAdjustTarget] = useState<LeaveBalance | null>(null);
@@ -54,15 +59,30 @@ export function LeaveBalanceListScreen() {
       const params: Record<string, unknown> = {};
       if (filterYear) params.year = parseInt(filterYear, 10);
       if (filterUserId) params.userId = filterUserId;
+      params.page = page;
+      params.limit = limit;
       const res = await getLeaveBalances(
-        params as { userId?: string; planId?: string; year?: number }
+        params as {
+          userId?: string;
+          planId?: string;
+          year?: number;
+          page?: number;
+          limit?: number;
+        }
       );
-      setBalances(res.data);
+      const payload = res.data as unknown as PaginatedResponse<LeaveBalance>;
+      setBalances(payload.items);
+      setTotal(payload.total);
+      setTotalPages(payload.totalPages);
     } catch {
       toast.error('Failed to load balances');
     } finally {
       setIsLoading(false);
     }
+  }, [filterYear, filterUserId, page, limit]);
+
+  useEffect(() => {
+    setPage(1);
   }, [filterYear, filterUserId]);
 
   useEffect(() => {
@@ -172,95 +192,105 @@ export function LeaveBalanceListScreen() {
               No balance records found. Initialize balances from a leave plan.
             </p>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Employee</TableHead>
-                  <TableHead>Leave Type</TableHead>
-                  <TableHead className="text-right">Allocated</TableHead>
-                  <TableHead className="text-right">Used</TableHead>
-                  <TableHead className="text-right">Carried</TableHead>
-                  <TableHead className="text-right">Adjusted</TableHead>
-                  <TableHead className="text-right">Balance</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {balances.map(b => (
-                  <TableRow key={b.id}>
-                    <TableCell>
-                      {b.user ? (
-                        <button
-                          type="button"
-                          className="text-left hover:underline"
-                          onClick={() =>
-                            router.push(
-                              `/dashboard/admin/leave-balances/employee/${b.userId}`
-                            )
-                          }
-                        >
-                          <p className="font-medium">
-                            {b.user.firstName} {b.user.lastName}
-                          </p>
-                          <p className="text-muted-foreground text-xs">
-                            {b.user.email}
-                          </p>
-                        </button>
-                      ) : (
-                        <span className="text-xs">{b.userId}</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        <p className="font-medium">
-                          {b.leaveTypeConfig?.name ?? '—'}
-                        </p>
-                        {b.leaveTypeConfig?.code && (
-                          <code className="text-muted-foreground text-xs">
-                            {b.leaveTypeConfig.code}
-                          </code>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {Number(b.allocated)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {Number(b.used)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {Number(b.carriedForward)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {Number(b.adjusted) !== 0 ? (
-                        <Badge
-                          variant={
-                            Number(b.adjusted) > 0 ? 'success' : 'warning'
-                          }
-                        >
-                          {Number(b.adjusted) > 0 ? '+' : ''}
-                          {Number(b.adjusted)}
-                        </Badge>
-                      ) : (
-                        '0'
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right font-semibold">
-                      {Number(b.balance)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="xs"
-                        onClick={() => openAdjustDialog(b)}
-                      >
-                        Adjust
-                      </Button>
-                    </TableCell>
+            <>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Employee</TableHead>
+                    <TableHead>Leave Type</TableHead>
+                    <TableHead className="text-right">Allocated</TableHead>
+                    <TableHead className="text-right">Used</TableHead>
+                    <TableHead className="text-right">Carried</TableHead>
+                    <TableHead className="text-right">Adjusted</TableHead>
+                    <TableHead className="text-right">Balance</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {balances.map(b => (
+                    <TableRow key={b.id}>
+                      <TableCell>
+                        {b.user ? (
+                          <button
+                            type="button"
+                            className="text-left hover:underline"
+                            onClick={() =>
+                              router.push(
+                                `/dashboard/admin/leave-balances/employee/${b.userId}`
+                              )
+                            }
+                          >
+                            <p className="font-medium">
+                              {b.user.firstName} {b.user.lastName}
+                            </p>
+                            <p className="text-muted-foreground text-xs">
+                              {b.user.email}
+                            </p>
+                          </button>
+                        ) : (
+                          <span className="text-xs">{b.userId}</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <p className="font-medium">
+                            {b.leaveTypeConfig?.name ?? '—'}
+                          </p>
+                          {b.leaveTypeConfig?.code && (
+                            <code className="text-muted-foreground text-xs">
+                              {b.leaveTypeConfig.code}
+                            </code>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {Number(b.allocated)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {Number(b.used)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {Number(b.carriedForward)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {Number(b.adjusted) !== 0 ? (
+                          <Badge
+                            variant={
+                              Number(b.adjusted) > 0 ? 'success' : 'warning'
+                            }
+                          >
+                            {Number(b.adjusted) > 0 ? '+' : ''}
+                            {Number(b.adjusted)}
+                          </Badge>
+                        ) : (
+                          '0'
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right font-semibold">
+                        {Number(b.balance)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="ghost"
+                          size="xs"
+                          onClick={() => openAdjustDialog(b)}
+                        >
+                          Adjust
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              <Pagination
+                page={page}
+                totalPages={totalPages}
+                total={total}
+                limit={limit}
+                onPageChange={setPage}
+                onLimitChange={setLimit}
+              />
+            </>
           )}
         </CardContent>
       </Card>

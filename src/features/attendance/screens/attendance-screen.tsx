@@ -8,6 +8,7 @@ import {
   ChevronRight,
   CircleCheck,
   Clock3,
+  ClipboardCheck,
   FileText,
   FileWarning,
   ListChecks,
@@ -795,11 +796,18 @@ function EmployeeAttendanceView({
                     <TableHead>Punch Out</TableHead>
                     <TableHead>Working Hours</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead />
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {history.map(record => {
                     const date = new Date(record.workDate);
+                    const canRegularize =
+                      record.status === 'absent' ||
+                      record.status === 'late' ||
+                      record.status === 'half_day' ||
+                      !record.punchInAt ||
+                      !record.punchOutAt;
                     return (
                       <TableRow key={record.id}>
                         <TableCell className="whitespace-nowrap">
@@ -828,6 +836,23 @@ function EmployeeAttendanceView({
                           >
                             {getSummaryStatusLabel(record.status)}
                           </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {canRegularize && (
+                            <Button
+                              asChild
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 gap-1 px-2 text-xs text-orange-500 hover:text-orange-400"
+                            >
+                              <Link
+                                href={`/dashboard/regularization?date=${record.workDate}`}
+                              >
+                                <ClipboardCheck className="size-3.5" />
+                                Regularize
+                              </Link>
+                            </Button>
+                          )}
                         </TableCell>
                       </TableRow>
                     );
@@ -891,6 +916,17 @@ function EmployeeAttendanceView({
             </CardTitle>
           </CardHeader>
           <CardContent className="grid gap-3 p-5">
+            <Button
+              asChild
+              variant="outline"
+              size="sm"
+              className="justify-start"
+            >
+              <Link href="/dashboard/regularization">
+                <ClipboardCheck className="size-4" />
+                Request Regularization
+              </Link>
+            </Button>
             <Button
               asChild
               variant="outline"

@@ -1,16 +1,22 @@
 'use client';
 
+import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { useCallback, useEffect, useState } from 'react';
 
 import {
   AttendanceClock,
   HoursStats,
+  LeaveChart,
   LeaveSummary,
   PageHeader,
+  TeamOnLeave,
+  UpcomingBirthdays,
   UpcomingHolidays,
   WorkTimeline,
 } from '@/components/employee-dashboard';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { HrDashboardScreen } from '@/features/hr-dashboard';
 import {
   getAttendanceSummary,
@@ -26,19 +32,43 @@ import type {
 import type { AttendanceSummary, TodayAttendance } from '@/types/attendance';
 import type { LeaveBalance } from '@/types/leave';
 
+const LEAVE_COLORS = [
+  '#22c55e',
+  '#3b82f6',
+  '#eab308',
+  '#ef4444',
+  '#14b8a6',
+  '#a855f7',
+  '#f97316',
+  '#ec4899',
+];
+
 function formatDuration(minutes: number): string {
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
   return `${h}h ${String(m).padStart(2, '0')}m`;
 }
 
+function buildLeaveChartData(
+  balances: LeaveBalance[]
+): { label: string; value: number; color: string }[] {
+  return balances.map((b, i) => ({
+    label: b.leaveTypeConfig?.name ?? 'Unknown',
+    value: Number(b.used),
+    color: LEAVE_COLORS[i % LEAVE_COLORS.length],
+  }));
+}
+
 function buildLeaveStats(
   balances: LeaveBalance[]
 ): { label: string; value: number | string }[] {
-  const totalAllocated = balances.reduce((s, b) => s + b.allocated, 0);
-  const totalUsed = balances.reduce((s, b) => s + b.used, 0);
-  const totalBalance = balances.reduce((s, b) => s + b.balance, 0);
-  const totalCarried = balances.reduce((s, b) => s + b.carriedForward, 0);
+  const paid = balances.filter(
+    b => !(b.leaveTypeConfig?.isUnlimited && !b.leaveTypeConfig?.isPaid)
+  );
+  const totalAllocated = paid.reduce((s, b) => s + Number(b.allocated), 0);
+  const totalUsed = paid.reduce((s, b) => s + Number(b.used), 0);
+  const totalBalance = paid.reduce((s, b) => s + Number(b.balance), 0);
+  const totalCarried = paid.reduce((s, b) => s + Number(b.carriedForward), 0);
 
   return [
     { label: 'Total Leaves', value: totalAllocated },
@@ -107,10 +137,7 @@ function buildHoursStats(
 function buildTimelineData(
   attendance: TodayAttendance | null,
   summary: AttendanceSummary | null
-): {
-  stats: TimelineStat[];
-  bars: TimelineBar[];
-} {
+): { stats: TimelineStat[]; bars: TimelineBar[] } {
   const totalWorked =
     summary?.totalWorkedMinutes ?? attendance?.totalMinutes ?? 0;
   const expectedPerDay = summary?.expectedMinutesPerDay ?? 540;
@@ -152,6 +179,31 @@ function buildTimelineData(
   }
 
   return { stats, bars };
+}
+
+function DashboardSkeleton() {
+  return (
+    <div className="flex flex-col gap-5">
+      <div className="flex items-center justify-between">
+        <div className="space-y-2">
+          <Skeleton className="h-7 w-48" />
+          <Skeleton className="h-4 w-32" />
+        </div>
+      </div>
+      <div className="grid gap-5 lg:grid-cols-2">
+        <Skeleton className="h-64 rounded-xl" />
+        <Skeleton className="h-64 rounded-xl" />
+      </div>
+      <div className="grid gap-5 lg:grid-cols-3">
+        <Skeleton className="h-52 rounded-xl lg:col-span-2" />
+        <Skeleton className="h-52 rounded-xl" />
+      </div>
+      <div className="grid gap-5 lg:grid-cols-2">
+        <Skeleton className="h-48 rounded-xl" />
+        <Skeleton className="h-48 rounded-xl" />
+      </div>
+    </div>
+  );
 }
 
 export function DashboardScreen() {
@@ -197,11 +249,7 @@ export function DashboardScreen() {
   }, [fetchData]);
 
   if (status === 'loading') {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <p className="text-muted-foreground">Loading...</p>
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   if (isHrUser) {
@@ -209,14 +257,11 @@ export function DashboardScreen() {
   }
 
   if (isDataLoading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <p className="text-muted-foreground">Loading...</p>
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   const leaveStats = buildLeaveStats(balances);
+  const leaveChartData = buildLeaveChartData(balances);
   const hoursStats = buildHoursStats(attendance, summary);
   const { stats: timelineStats, bars: timelineBars } = buildTimelineData(
     attendance,
@@ -227,22 +272,47 @@ export function DashboardScreen() {
     <div className="flex flex-col gap-5">
       <PageHeader title="Dashboard" breadcrumbs={[{ label: 'Overview' }]} />
 
+      {/* Row 1: Attendance + Leave Summary */}
       <div className="grid gap-5 lg:grid-cols-2">
         <AttendanceClock />
         <LeaveSummary
-          title="Leave Details"
+          title="Leave Overview"
           year={String(currentYear)}
           stats={leaveStats}
+          hideApplyButton
+          actionSlot={
+            <Button variant="outline" className="mt-3 w-full" asChild>
+              <Link href="/dashboard/leave">Apply / View Leaves</Link>
+            </Button>
+          }
         />
       </div>
 
+      {/* Row 2: Leave Chart + Team On Leave */}
       <div className="grid gap-5 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <HoursStats stats={hoursStats} />
+          <LeaveChart
+            title="Leave Breakdown"
+            year={String(currentYear)}
+            items={leaveChartData}
+          />
         </div>
+        <TeamOnLeave />
+      </div>
+
+      {/* Row 3: Hours Stats + Work Timeline */}
+      <div className="grid gap-5 lg:grid-cols-3">
+        <div className="flex flex-col gap-5 lg:col-span-2">
+          <HoursStats stats={hoursStats} />
+          <WorkTimeline stats={timelineStats} bars={timelineBars} />
+        </div>
+        <UpcomingBirthdays />
+      </div>
+
+      {/* Row 4: Upcoming Holidays */}
+      <div className="grid gap-5 lg:grid-cols-2">
         <UpcomingHolidays />
       </div>
-      <WorkTimeline stats={timelineStats} bars={timelineBars} />
     </div>
   );
 }

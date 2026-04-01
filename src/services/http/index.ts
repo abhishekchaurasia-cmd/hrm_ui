@@ -56,7 +56,7 @@ apiClient.interceptors.response.use(
       error.response?.status === 401 &&
       typeof window !== 'undefined'
     ) {
-      void signOut({ callbackUrl: '/login' });
+      void signOut({ callbackUrl: '/' });
     }
 
     return Promise.reject(error);

@@ -24,7 +24,7 @@ function DonutChart({ items }: { items: LeaveChartItem[] }) {
   const circles = items.reduce<
     Array<{ item: LeaveChartItem; strokeLength: number; offset: number }>
   >((acc, item) => {
-    const strokeLength = (item.value / total) * circumference;
+    const strokeLength = total > 0 ? (item.value / total) * circumference : 0;
     const offset = acc.reduce((sum, curr) => sum + curr.strokeLength, 0);
     return [...acc, { item, strokeLength, offset }];
   }, []);

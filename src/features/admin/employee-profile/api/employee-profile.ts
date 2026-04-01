@@ -178,13 +178,25 @@ export async function getRelationOptions(
     url: endpoint,
   });
 
-  // Some endpoints return a plain array; others wrap it in { data: [...] }
-  const raw = res.data as ApiResponse<OptionApiItem[]> | OptionApiItem[];
-  const items: OptionApiItem[] = Array.isArray(raw)
-    ? raw
-    : Array.isArray(raw.data)
-      ? raw.data
-      : [];
+  const raw = res.data as
+    | ApiResponse<OptionApiItem[]>
+    | ApiResponse<{ items: OptionApiItem[] }>
+    | OptionApiItem[];
+  let items: OptionApiItem[];
+  if (Array.isArray(raw)) {
+    items = raw;
+  } else if (Array.isArray(raw.data)) {
+    items = raw.data;
+  } else if (
+    raw.data &&
+    typeof raw.data === 'object' &&
+    'items' in raw.data &&
+    Array.isArray((raw.data as { items: OptionApiItem[] }).items)
+  ) {
+    items = (raw.data as { items: OptionApiItem[] }).items;
+  } else {
+    items = [];
+  }
 
   return items.map(item => ({
     value: item.userId ?? item.id,

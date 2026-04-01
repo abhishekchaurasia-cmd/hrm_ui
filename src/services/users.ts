@@ -24,3 +24,30 @@ export async function createEmployeeUser(
 
   return res.data as ApiResponse<unknown>;
 }
+
+export async function deleteUser(userId: string): Promise<ApiResponse<null>> {
+  const res = await service({
+    method: HttpMethod.DELETE,
+    url: `/api/v1/users/${encodeURIComponent(userId)}`,
+  });
+
+  return res.data as ApiResponse<null>;
+}
+
+export interface UpcomingBirthday {
+  userId: string;
+  firstName: string;
+  lastName: string;
+  dateOfBirth: string;
+  department: string | null;
+}
+
+export async function getUpcomingBirthdays(): Promise<
+  ApiResponse<UpcomingBirthday[]>
+> {
+  const res = await service({
+    method: HttpMethod.GET,
+    url: '/api/v1/users/upcoming-birthdays',
+  });
+  return res.data as ApiResponse<UpcomingBirthday[]>;
+}

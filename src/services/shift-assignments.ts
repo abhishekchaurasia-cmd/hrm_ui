@@ -11,6 +11,8 @@ interface ApiResponse<T> {
 export async function getShiftAssignments(params?: {
   userId?: string;
   shiftId?: string;
+  page?: number;
+  limit?: number;
 }): Promise<ApiResponse<ShiftAssignment[]>> {
   const res = await service({
     method: HttpMethod.GET,

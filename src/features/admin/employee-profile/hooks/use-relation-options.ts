@@ -35,5 +35,5 @@ export function useLocationsOptions(): UseQueryResult<OptionItem[]> {
 }
 
 export function useHolidayListsOptions(): UseQueryResult<OptionItem[]> {
-  return useOptions('holiday-lists', '/api/v1/holiday-lists');
+  return useOptions('holiday-lists', '/api/v1/holiday-lists/options');
 }

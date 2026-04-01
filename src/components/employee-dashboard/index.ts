@@ -6,5 +6,7 @@ export { LeaveChart } from './leave-chart';
 export { LeaveSummary } from './leave-summary';
 export { PageHeader } from './page-header';
 export { ProfileCard } from './profile-card';
+export { TeamOnLeave } from './team-on-leave';
+export { UpcomingBirthdays } from './upcoming-birthdays';
 export { UpcomingHolidays } from './upcoming-holidays';
 export { WorkTimeline } from './work-timeline';
