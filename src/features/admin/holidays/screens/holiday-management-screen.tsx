@@ -160,7 +160,7 @@ export function HolidayManagementScreen() {
     setIsLoadingEmployees(true);
     try {
       const res = await getAssignedEmployees(id);
-      setAssignedEmployees(res.data);
+      setAssignedEmployees(res.data?.items ?? []);
     } catch {
       toast.error('Failed to load employees');
     } finally {
@@ -1484,7 +1484,8 @@ function AssignEmployeesDialog({
       setIsLoading(true);
       try {
         const res = await getUnassignedEmployees(listIdVal, query || undefined);
-        setEmployees(res.data);
+        const data = res.data;
+        setEmployees(Array.isArray(data) ? data : (data.items ?? []));
       } catch {
         toast.error('Failed to load employees');
       } finally {

@@ -148,20 +148,40 @@ export async function importHolidays(
   return res.data as ApiResponse<BulkImportResult>;
 }
 
-export async function getAssignedEmployees(
-  listId: string
-): Promise<ApiResponse<AssignedEmployee[]>> {
+export async function getAssignedEmployees(listId: string): Promise<
+  ApiResponse<{
+    items: AssignedEmployee[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }>
+> {
   const res = await service({
     method: HttpMethod.GET,
     url: `/api/v1/holiday-lists/${listId}/employees`,
   });
-  return res.data as ApiResponse<AssignedEmployee[]>;
+  return res.data as ApiResponse<{
+    items: AssignedEmployee[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }>;
 }
 
 export async function getUnassignedEmployees(
   listId: string,
   search?: string
-): Promise<ApiResponse<AssignedEmployee[]>> {
+): Promise<
+  ApiResponse<{
+    items: AssignedEmployee[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }>
+> {
   const params: Record<string, unknown> = {};
   if (search) params.search = search;
   const res = await service({
@@ -169,7 +189,13 @@ export async function getUnassignedEmployees(
     url: `/api/v1/holiday-lists/${listId}/employees/unassigned`,
     params: Object.keys(params).length > 0 ? params : undefined,
   });
-  return res.data as ApiResponse<AssignedEmployee[]>;
+  return res.data as ApiResponse<{
+    items: AssignedEmployee[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }>;
 }
 
 export async function assignEmployees(

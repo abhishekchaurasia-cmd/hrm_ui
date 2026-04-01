@@ -66,6 +66,12 @@ export function CreateRegularizationDialog({
   const [reason, setReason] = useState('');
 
   useEffect(() => {
+    void getMyRemainingEntries().then(res => {
+      if (res.data) setRemaining(res.data);
+    });
+  }, []);
+
+  useEffect(() => {
     if (open) {
       void getMyRemainingEntries().then(res => {
         if (res.data) setRemaining(res.data);
@@ -118,6 +124,8 @@ export function CreateRegularizationDialog({
         reason: reason.trim() || undefined,
       });
       toast.success('Regularization request submitted');
+      const freshRes = await getMyRemainingEntries();
+      if (freshRes.data) setRemaining(freshRes.data);
       setOpen(false);
       resetForm();
       onSuccess();
@@ -153,7 +161,7 @@ export function CreateRegularizationDialog({
       }}
     >
       <DialogTrigger asChild>
-        <Button className="gap-2" disabled={remaining !== null && !canSubmit}>
+        <Button className="gap-2">
           <PlusCircle className="size-4" />
           Request Regularization
         </Button>
@@ -172,11 +180,15 @@ export function CreateRegularizationDialog({
         {remaining && (
           <div className="flex items-center gap-2 text-sm">
             <span className="text-muted-foreground">Remaining entries:</span>
-            <Badge
-              variant={remaining.remaining > 0 ? 'success' : 'destructive'}
-            >
-              {remaining.remaining} / {remaining.total} per {remaining.period}
-            </Badge>
+            {remaining.enabled ? (
+              <Badge
+                variant={remaining.remaining > 0 ? 'success' : 'destructive'}
+              >
+                {remaining.remaining} / {remaining.total} per {remaining.period}
+              </Badge>
+            ) : (
+              <Badge variant="secondary">Not enabled</Badge>
+            )}
           </div>
         )}
 
