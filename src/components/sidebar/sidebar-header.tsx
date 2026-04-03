@@ -2,6 +2,7 @@
 
 import { PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 
+import { CopanLogo } from '@/components/icons/copan-logo';
 import { cn } from '@/lib/utils';
 
 interface SidebarHeaderProps {
@@ -12,16 +13,7 @@ interface SidebarHeaderProps {
 export function SidebarHeader({ isCollapsed, onToggle }: SidebarHeaderProps) {
   return (
     <div className="flex h-16 items-center justify-between border-b border-neutral-800 px-4">
-      {!isCollapsed && (
-        <div className="flex items-center gap-2">
-          <div className="flex size-8 items-center justify-center rounded-lg bg-orange-500">
-            <span className="text-sm font-bold text-white">CD</span>
-          </div>
-          <span className="text-lg font-bold text-neutral-100">
-            Copan<span className="text-orange-500">Digital</span>
-          </span>
-        </div>
-      )}
+      {!isCollapsed && <CopanLogo className="h-8 w-auto text-white" />}
 
       <button
         type="button"

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 import { ThemeToggle } from '@/components/header/theme-toggle';
+import { CopanLogo } from '@/components/icons/copan-logo';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -45,13 +46,8 @@ export function LandingNavbar({ onLoginClick }: LandingNavbarProps) {
       )}
     >
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        <Link href="/" className="flex items-center gap-2">
-          <div className="flex size-8 items-center justify-center rounded-lg bg-orange-500">
-            <span className="text-sm font-bold text-white">CD</span>
-          </div>
-          <span className="text-foreground text-lg font-bold">
-            Copan<span className="text-orange-500">Digital</span>
-          </span>
+        <Link href="/" className="flex items-center">
+          <CopanLogo className="h-8 w-auto" />
         </Link>
 
         {/* Desktop nav */}
