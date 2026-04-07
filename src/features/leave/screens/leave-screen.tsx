@@ -38,7 +38,6 @@ import {
 } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { LeaveRequestsScreen } from '@/features/admin/leave-requests/screens/leave-requests-screen';
 import {
   applyLeave,
   cancelLeaveRequest,
@@ -92,7 +91,7 @@ function BalanceProgress({
   return (
     <div className="bg-muted mt-2 h-2 w-full overflow-hidden rounded-full">
       <div
-        className="h-full rounded-full bg-orange-500 transition-all"
+        className="h-full rounded-full bg-blue-500 transition-all"
         style={{ width: `${pct}%` }}
       />
     </div>
@@ -103,7 +102,6 @@ export function LeaveScreen() {
   const { data: session } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const isHrUser = session?.user?.role === 'hr';
   const currentYear = new Date().getFullYear();
   const autoApplyTriggered = useRef(false);
 
@@ -314,10 +312,6 @@ export function LeaveScreen() {
 
   const pendingCount = statusCounts.pending ?? 0;
 
-  if (isHrUser) {
-    return <LeaveRequestsScreen />;
-  }
-
   return (
     <div className="flex flex-col gap-5">
       {/* Header */}
@@ -329,7 +323,7 @@ export function LeaveScreen() {
           </p>
         </div>
         <Button
-          className="gap-2 bg-orange-500 text-white hover:bg-orange-600"
+          className="gap-2 bg-blue-500 text-white hover:bg-blue-600"
           onClick={() => void openApplyDialog()}
         >
           <PlusCircle className="size-4" />
@@ -339,7 +333,7 @@ export function LeaveScreen() {
 
       {isLoading ? (
         <div className="flex items-center justify-center py-20">
-          <div className="border-muted-foreground size-8 animate-spin rounded-full border-4 border-t-orange-500" />
+          <div className="border-muted-foreground size-8 animate-spin rounded-full border-4 border-t-blue-500" />
         </div>
       ) : (
         <Tabs defaultValue="summary" className="w-full">
@@ -348,7 +342,7 @@ export function LeaveScreen() {
             <TabsTrigger value="my-leaves" className="gap-1.5">
               My Leaves
               {pendingCount > 0 && (
-                <span className="inline-flex size-5 items-center justify-center rounded-full bg-orange-500 text-[10px] font-bold text-white">
+                <span className="inline-flex size-5 items-center justify-center rounded-full bg-blue-500 text-[10px] font-bold text-white">
                   {pendingCount}
                 </span>
               )}
@@ -391,7 +385,7 @@ export function LeaveScreen() {
                   <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
                     Used
                   </p>
-                  <p className="mt-1 text-3xl font-bold text-orange-500">
+                  <p className="mt-1 text-3xl font-bold text-blue-500">
                     {totalUsed}
                   </p>
                 </CardContent>
@@ -533,7 +527,7 @@ export function LeaveScreen() {
                   }}
                   className={`rounded-full border px-3.5 py-1 text-xs font-medium transition-colors ${
                     statusFilter === f.value
-                      ? 'border-orange-500 bg-orange-500/10 text-orange-500'
+                      ? 'border-blue-500 bg-blue-500/10 text-blue-500'
                       : 'border-border text-muted-foreground hover:border-primary/50 hover:text-foreground'
                   }`}
                 >
@@ -724,7 +718,7 @@ export function LeaveScreen() {
                   }
                   className={`rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
                     !form.isHalfDay
-                      ? 'border-orange-500 bg-orange-500/10 text-orange-500'
+                      ? 'border-blue-500 bg-blue-500/10 text-blue-500'
                       : 'border-border text-muted-foreground hover:border-primary/50'
                   }`}
                 >
@@ -742,7 +736,7 @@ export function LeaveScreen() {
                   }
                   className={`rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
                     form.isHalfDay
-                      ? 'border-orange-500 bg-orange-500/10 text-orange-500'
+                      ? 'border-blue-500 bg-blue-500/10 text-blue-500'
                       : 'border-border text-muted-foreground hover:border-primary/50'
                   }`}
                 >
@@ -827,7 +821,7 @@ export function LeaveScreen() {
               Cancel
             </Button>
             <Button
-              className="bg-orange-500 text-white hover:bg-orange-600"
+              className="bg-blue-500 text-white hover:bg-blue-600"
               onClick={() => void handleApply()}
               disabled={isSubmitting}
             >

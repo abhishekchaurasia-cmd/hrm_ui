@@ -91,7 +91,7 @@ export function LeaveChart({
 
         {comparisonText && (
           <div className="text-muted-foreground mt-4 flex items-center gap-2 text-sm">
-            <span className="size-2.5 rounded-full bg-orange-400" />
+            <span className="size-2.5 rounded-full bg-blue-400" />
             {comparisonText}
           </div>
         )}

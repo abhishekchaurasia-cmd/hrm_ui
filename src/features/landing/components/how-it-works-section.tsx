@@ -50,7 +50,7 @@ export function HowItWorksSection() {
 
         <div className="relative mt-16">
           {/* Connector line (desktop) */}
-          <div className="absolute top-14 right-[16.67%] left-[16.67%] hidden h-0.5 border-t-2 border-dashed border-orange-500/30 lg:block" />
+          <div className="absolute top-14 right-[16.67%] left-[16.67%] hidden h-0.5 border-t-2 border-dashed border-blue-500/30 lg:block" />
 
           <div className="grid gap-10 lg:grid-cols-3 lg:gap-8">
             {steps.map(({ number, icon: Icon, title, description }) => (
@@ -60,12 +60,12 @@ export function HowItWorksSection() {
               >
                 {/* Numbered badge */}
                 <div className="relative mb-6">
-                  <div className="flex size-28 items-center justify-center rounded-full bg-orange-500/10">
-                    <div className="flex size-20 items-center justify-center rounded-full bg-orange-500/20">
-                      <Icon className="size-8 text-orange-500" />
+                  <div className="flex size-28 items-center justify-center rounded-full bg-blue-500/10">
+                    <div className="flex size-20 items-center justify-center rounded-full bg-blue-500/20">
+                      <Icon className="size-8 text-blue-500" />
                     </div>
                   </div>
-                  <div className="absolute -top-1 -right-1 flex size-8 items-center justify-center rounded-full bg-orange-500 text-sm font-bold text-white shadow-lg">
+                  <div className="absolute -top-1 -right-1 flex size-8 items-center justify-center rounded-full bg-blue-500 text-sm font-bold text-white shadow-lg">
                     {number}
                   </div>
                 </div>

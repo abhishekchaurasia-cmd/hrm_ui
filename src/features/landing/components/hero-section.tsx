@@ -17,7 +17,7 @@ function DashboardIllustration() {
   return (
     <div className="relative mx-auto w-full max-w-lg">
       {/* Glow backdrop */}
-      <div className="absolute -inset-4 rounded-3xl bg-orange-500/20 blur-3xl" />
+      <div className="absolute -inset-4 rounded-3xl bg-blue-500/20 blur-3xl" />
 
       <div className="border-border/50 bg-card relative overflow-hidden rounded-2xl border shadow-2xl">
         {/* Title bar */}
@@ -48,7 +48,7 @@ function DashboardIllustration() {
                 icon: Calendar,
                 label: 'On Leave',
                 value: '12',
-                color: 'text-orange-500',
+                color: 'text-blue-500',
               },
             ].map(({ icon: Icon, label, value, color }) => (
               <div
@@ -78,7 +78,7 @@ function DashboardIllustration() {
               {[65, 80, 55, 90, 75, 85, 70].map((h, i) => (
                 <div
                   key={i}
-                  className="flex-1 rounded-t-sm bg-gradient-to-t from-orange-500 to-orange-400"
+                  className="flex-1 rounded-t-sm bg-gradient-to-t from-blue-500 to-blue-400"
                   style={{ height: `${h}px` }}
                 />
               ))}
@@ -96,7 +96,7 @@ function DashboardIllustration() {
               {
                 name: 'Priya K.',
                 status: 'On Leave',
-                statusColor: 'bg-orange-500',
+                statusColor: 'bg-blue-500',
               },
               {
                 name: 'Amit V.',
@@ -125,7 +125,7 @@ function DashboardIllustration() {
       </div>
 
       {/* Floating badge */}
-      <div className="absolute -right-3 -bottom-3 flex items-center gap-2 rounded-xl border border-orange-500/20 bg-orange-500 px-4 py-2 shadow-lg">
+      <div className="absolute -right-3 -bottom-3 flex items-center gap-2 rounded-xl border border-blue-500/20 bg-blue-500 px-4 py-2 shadow-lg">
         <Shield className="size-4 text-white" />
         <span className="text-xs font-semibold text-white">Secure & Fast</span>
       </div>
@@ -142,25 +142,25 @@ export function HeroSection({ onLoginClick }: HeroSectionProps) {
     <section className="relative overflow-hidden pt-32 pb-20 lg:pt-40 lg:pb-28">
       {/* Background decoration */}
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute top-0 left-1/2 h-[600px] w-[600px] -translate-x-1/2 rounded-full bg-orange-500/5 blur-3xl" />
-        <div className="absolute top-40 right-0 h-[400px] w-[400px] rounded-full bg-orange-500/5 blur-3xl" />
+        <div className="absolute top-0 left-1/2 h-[600px] w-[600px] -translate-x-1/2 rounded-full bg-blue-500/5 blur-3xl" />
+        <div className="absolute top-40 right-0 h-[400px] w-[400px] rounded-full bg-blue-500/5 blur-3xl" />
       </div>
 
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
           {/* Copy */}
           <div className="max-w-xl">
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-orange-500/20 bg-orange-500/10 px-4 py-1.5 text-sm font-medium text-orange-600 dark:text-orange-400">
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-blue-500/20 bg-blue-500/10 px-4 py-1.5 text-sm font-medium text-blue-600 dark:text-blue-400">
               <span className="relative flex size-2">
-                <span className="absolute inline-flex size-full animate-ping rounded-full bg-orange-500 opacity-75" />
-                <span className="relative inline-flex size-2 rounded-full bg-orange-500" />
+                <span className="absolute inline-flex size-full animate-ping rounded-full bg-blue-500 opacity-75" />
+                <span className="relative inline-flex size-2 rounded-full bg-blue-500" />
               </span>
               CopanDigital Internal Platform
             </div>
 
             <h1 className="text-foreground text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl">
               Modern HR Management,{' '}
-              <span className="bg-gradient-to-r from-orange-500 to-amber-500 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-blue-500 to-blue-400 bg-clip-text text-transparent">
                 Simplified
               </span>
             </h1>
@@ -174,7 +174,7 @@ export function HeroSection({ onLoginClick }: HeroSectionProps) {
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Button
                 size="lg"
-                className="bg-orange-500 text-white hover:bg-orange-600"
+                className="bg-blue-500 text-white hover:bg-blue-600"
                 onClick={() => onLoginClick('employee')}
               >
                 Employee Login

@@ -10,18 +10,28 @@ import { cn } from '@/lib/utils';
 import { SidebarBadge } from './sidebar-badge';
 
 import type { SidebarMenuItem as MenuItemType } from './sidebar-config';
+import type { UserRole } from '@/types/auth';
 
 interface SidebarMenuItemProps {
   item: MenuItemType;
   isCollapsed: boolean;
+  currentRole: UserRole;
 }
 
-export function SidebarMenuItem({ item, isCollapsed }: SidebarMenuItemProps) {
+export function SidebarMenuItem({
+  item,
+  isCollapsed,
+  currentRole,
+}: SidebarMenuItemProps) {
   const pathname = usePathname();
-  const hasChildren = item.children && item.children.length > 0;
+  const visibleChildren = item.children?.filter(child => {
+    if (!child.roles || child.roles.length === 0) return true;
+    return child.roles.includes(currentRole);
+  });
+  const hasChildren = visibleChildren && visibleChildren.length > 0;
 
   const isChildActive = hasChildren
-    ? item.children!.some(child => pathname === child.href)
+    ? visibleChildren!.some(child => pathname === child.href)
     : false;
   const isActive = item.href ? pathname === item.href : isChildActive;
 
@@ -62,7 +72,7 @@ export function SidebarMenuItem({ item, isCollapsed }: SidebarMenuItemProps) {
 
         {!isCollapsed && isOpen && (
           <div className="relative mt-1 ml-[22px] border-l border-neutral-700 pl-4">
-            {item.children!.map(child => {
+            {visibleChildren!.map(child => {
               const childActive = pathname === child.href;
               return (
                 <Link
@@ -72,7 +82,7 @@ export function SidebarMenuItem({ item, isCollapsed }: SidebarMenuItemProps) {
                     'flex items-center justify-between rounded-md px-3 py-2 text-sm transition-colors',
                     'text-neutral-400 hover:text-neutral-200',
                     childActive &&
-                      '-ml-[17px] border-l-2 border-orange-500 pl-[15px] text-orange-400'
+                      '-ml-[17px] border-l-2 border-blue-500 pl-[15px] text-blue-400'
                   )}
                 >
                   <span>{child.label}</span>
@@ -97,7 +107,7 @@ export function SidebarMenuItem({ item, isCollapsed }: SidebarMenuItemProps) {
       className={cn(
         'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
         'text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200',
-        isActive && 'bg-neutral-800/60 text-orange-400'
+        isActive && 'bg-neutral-800/60 text-blue-400'
       )}
     >
       <item.icon className="size-5 shrink-0" />

@@ -10,7 +10,6 @@ import {
   Search,
   Trash2,
   UserCheck,
-  Users,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
@@ -19,10 +18,16 @@ import { toast } from 'sonner';
 import {
   AttendanceFollowupSection,
   AttendanceStatus,
+  CelebrationsEvents,
+  HrGreetingBanner,
   LateArrivalsAlerts,
   OverviewStats,
 } from '@/components/attendance-dashboard';
-import { LeaveSummary, PageHeader } from '@/components/employee-dashboard';
+import {
+  LeaveSummary,
+  PageHeader,
+  UpcomingHolidays,
+} from '@/components/employee-dashboard';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -161,54 +166,65 @@ function computeOverviewStats(
   const notMarked = employees.filter(e => e.status === null).length;
   const rate = total > 0 ? ((present / total) * 100).toFixed(1) : '0';
 
+  const presentEmps = employees.filter(
+    e =>
+      e.status === 'present' || e.status === 'late' || e.status === 'half_day'
+  );
+  const absentEmps = employees.filter(e => e.status === 'absent');
+  const lateEmps = employees.filter(e => e.status === 'late');
+  const notMarkedEmps = employees.filter(e => e.status === null);
+
+  const toNameList = (list: HrTodayEmployeeAttendance[]) =>
+    list.map(e => ({
+      name: `${e.firstName} ${e.lastName}`,
+      initials: `${e.firstName.charAt(0)}${e.lastName.charAt(0)}`.toUpperCase(),
+    }));
+
   return [
-    {
-      title: 'Total Employees',
-      value: total.toLocaleString(),
-      delta: '',
-      direction: 'up',
-      icon: Users,
-      iconBg: '#6366f1',
-    },
     {
       title: 'Present Today',
       value: present.toLocaleString(),
       delta: '',
-      direction: 'up',
+      direction: 'up' as const,
       icon: UserCheck,
       iconBg: '#10b981',
+      employees: toNameList(presentEmps),
     },
     {
       title: 'Absent Today',
       value: absent.toLocaleString(),
       delta: '',
-      direction: 'down',
+      direction: 'down' as const,
       icon: AlertTriangle,
       iconBg: '#ef4444',
+      employees: toNameList(absentEmps),
     },
     {
       title: 'Late Arrivals',
       value: late.toLocaleString(),
       delta: '',
-      direction: 'up',
+      direction: 'up' as const,
       icon: Clock3,
       iconBg: '#f59e0b',
+      employees: toNameList(lateEmps),
     },
     {
       title: 'Attendance Rate',
       value: `${rate}%`,
       delta: '',
-      direction: 'up',
+      direction: 'up' as const,
       icon: CircleCheck,
       iconBg: '#8b5cf6',
+      employees: toNameList(presentEmps),
     },
     {
       title: 'Not Marked',
       value: notMarked.toLocaleString(),
       delta: '',
-      direction: 'down',
+      direction: 'down' as const,
       icon: FileWarning,
       iconBg: '#64748b',
+      employees: toNameList(notMarkedEmps),
     },
   ];
 }
@@ -316,6 +332,8 @@ function getErrorMessage(err: unknown, fallback: string): string {
 function DashboardSkeleton() {
   return (
     <div className="flex flex-col gap-6">
+      <Skeleton className="h-24 rounded-xl" />
+
       <div className="flex items-center justify-between">
         <div className="space-y-2">
           <Skeleton className="h-8 w-48" />
@@ -325,12 +343,17 @@ function DashboardSkeleton() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {Array.from({ length: 6 }).map((_, i) => (
+        {Array.from({ length: 5 }).map((_, i) => (
           <Skeleton key={i} className="h-[76px] rounded-xl" />
         ))}
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
+        <Skeleton className="h-64 rounded-xl" />
+        <Skeleton className="h-64 rounded-xl" />
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
         <Skeleton className="h-64 rounded-xl" />
         <Skeleton className="h-64 rounded-xl" />
       </div>
@@ -439,6 +462,9 @@ export function HrDashboardScreen() {
 
   return (
     <div className="flex flex-col gap-6">
+      {/* Greeting Banner */}
+      <HrGreetingBanner />
+
       <PageHeader
         title="HR Dashboard"
         breadcrumbs={[
@@ -465,6 +491,12 @@ export function HrDashboardScreen() {
               statusData={statusData}
               totalWorkingDays={employees.length}
             />
+          </div>
+
+          {/* Celebrations & Events + Upcoming Holidays */}
+          <div className="grid gap-6 lg:grid-cols-2">
+            <CelebrationsEvents />
+            <UpcomingHolidays />
           </div>
 
           {/* Insights + Summary */}

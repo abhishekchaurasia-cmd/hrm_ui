@@ -276,7 +276,7 @@ export default function PayrollReportDetailScreen({ reportId }: Props) {
                         <TableCell>
                           {formatTime(day.punchOutAt)}
                           {day.isAutoLogout && (
-                            <span className="ml-1 text-xs text-orange-500">
+                            <span className="ml-1 text-xs text-blue-500">
                               (auto)
                             </span>
                           )}

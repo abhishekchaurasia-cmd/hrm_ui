@@ -45,7 +45,7 @@ export function AttendanceHeader({
           <Button
             asChild
             size="sm"
-            className="gap-1.5 bg-orange-500 text-white hover:bg-orange-600"
+            className="gap-1.5 bg-blue-500 text-white hover:bg-blue-600"
           >
             <Link href="/dashboard/leave?apply=true">
               <Plus className="size-3.5" />

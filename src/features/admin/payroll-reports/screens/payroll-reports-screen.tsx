@@ -40,7 +40,7 @@ export default function PayrollReportsScreen() {
       const res = await getPayrollReports();
       setReports(res.data);
     } catch {
-      toast.error('Failed to load payroll reports');
+      toast.error('Failed to load payroll data');
     } finally {
       setLoading(false);
     }
@@ -92,7 +92,7 @@ export default function PayrollReportsScreen() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Payroll Reports</h1>
+          <h1 className="text-2xl font-bold">Payroll</h1>
           <p className="text-muted-foreground mt-1">
             Generate and manage monthly payroll reports
           </p>
@@ -150,7 +150,7 @@ export default function PayrollReportsScreen() {
             <p className="text-muted-foreground py-8 text-center">Loading...</p>
           ) : reports.length === 0 ? (
             <p className="text-muted-foreground py-8 text-center">
-              No payroll reports generated yet
+              No payroll records generated yet
             </p>
           ) : (
             <Table>

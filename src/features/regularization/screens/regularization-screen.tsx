@@ -183,7 +183,7 @@ function EmployeeRegularizationView({ prefillDate }: { prefillDate?: string }) {
               <CardContent>
                 {isLoading ? (
                   <div className="flex items-center justify-center py-12">
-                    <div className="border-muted-foreground size-8 animate-spin rounded-full border-4 border-t-orange-500" />
+                    <div className="border-muted-foreground size-8 animate-spin rounded-full border-4 border-t-blue-500" />
                   </div>
                 ) : requests.length === 0 ? (
                   <p className="text-muted-foreground py-8 text-center text-sm">

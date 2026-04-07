@@ -2,6 +2,11 @@ import { OverviewStatCard } from './overview-stat-card';
 
 import type { LucideIcon } from 'lucide-react';
 
+export interface OverviewStatEmployee {
+  name: string;
+  initials: string;
+}
+
 export interface OverviewStatItem {
   title: string;
   value: string;
@@ -9,6 +14,7 @@ export interface OverviewStatItem {
   direction: 'up' | 'down';
   icon: LucideIcon;
   iconBg: string;
+  employees?: OverviewStatEmployee[];
 }
 
 interface OverviewStatsProps {

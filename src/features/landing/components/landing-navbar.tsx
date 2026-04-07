@@ -57,7 +57,7 @@ export function LandingNavbar({ onLoginClick }: LandingNavbarProps) {
             HR Login
           </Button>
           <Button
-            className="bg-orange-500 text-white hover:bg-orange-600"
+            className="bg-blue-500 text-white hover:bg-blue-600"
             onClick={() => onLoginClick('employee')}
           >
             Employee Login
@@ -97,7 +97,7 @@ export function LandingNavbar({ onLoginClick }: LandingNavbarProps) {
               HR Login
             </Button>
             <Button
-              className="w-full justify-center bg-orange-500 text-white hover:bg-orange-600"
+              className="w-full justify-center bg-blue-500 text-white hover:bg-blue-600"
               onClick={() => {
                 setMobileOpen(false);
                 onLoginClick('employee');

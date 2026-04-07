@@ -12,7 +12,7 @@ interface CtaSectionProps {
 
 export function CtaSection({ onLoginClick }: CtaSectionProps) {
   return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-orange-500 via-orange-500 to-amber-500 py-20 lg:py-24">
+    <section className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-500 to-blue-400 py-20 lg:py-24">
       {/* Decorative circles */}
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -top-24 -left-24 size-72 rounded-full bg-white/10 blur-2xl" />
@@ -28,7 +28,7 @@ export function CtaSection({ onLoginClick }: CtaSectionProps) {
         <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-5xl">
           Welcome to Your HR Portal
         </h2>
-        <p className="mx-auto mt-4 max-w-2xl text-lg text-orange-100">
+        <p className="mx-auto mt-4 max-w-2xl text-lg text-blue-100">
           Access attendance, leave management, shift schedules, and more — built
           exclusively for the CopanDigital team.
         </p>
@@ -36,7 +36,7 @@ export function CtaSection({ onLoginClick }: CtaSectionProps) {
         <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
           <Button
             size="lg"
-            className="bg-white text-orange-600 shadow-lg hover:bg-orange-50"
+            className="bg-white text-blue-600 shadow-lg hover:bg-blue-50"
             onClick={() => onLoginClick('employee')}
           >
             Login Now

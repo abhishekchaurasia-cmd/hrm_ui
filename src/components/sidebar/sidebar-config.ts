@@ -2,7 +2,6 @@ import {
   Building2,
   CalendarDays,
   Clock,
-  ClipboardCheck,
   FileSpreadsheet,
   Globe,
   ImageIcon,
@@ -12,7 +11,6 @@ import {
   Timer,
   User,
   ClipboardList,
-  FileCheck,
   FileText,
   UserCheck,
   Wallet,
@@ -28,6 +26,7 @@ export interface SidebarChildItem {
   label: string;
   href: string;
   badge?: { text: string; variant: BadgeVariant };
+  roles?: UserRole[];
 }
 
 export interface SidebarMenuItem {
@@ -62,18 +61,35 @@ export const sidebarConfig: SidebarMenuSection[] = [
         href: '/dashboard/attendance',
       },
       {
-        id: 'regularization',
-        label: 'Regularization',
-        icon: ClipboardCheck,
-        href: '/dashboard/regularization',
-        roles: ['employee'],
-      },
-      {
         id: 'leave',
         label: 'Leave',
         icon: CalendarDays,
-        href: '/dashboard/leave',
-        roles: ['employee'],
+        children: [
+          {
+            id: 'my-leaves',
+            label: 'My Leaves',
+            href: '/dashboard/leave',
+            roles: ['employee'],
+          },
+          {
+            id: 'my-regularizations',
+            label: 'My Regularizations',
+            href: '/dashboard/regularization',
+            roles: ['employee'],
+          },
+          {
+            id: 'admin-leave-requests',
+            label: 'Leave Requests',
+            href: '/dashboard/admin/leave-requests',
+            roles: ['hr'],
+          },
+          {
+            id: 'admin-regularization-requests',
+            label: 'Regularization Requests',
+            href: '/dashboard/admin/regularization-requests',
+            roles: ['hr'],
+          },
+        ],
       },
       {
         id: 'my-holidays',
@@ -94,6 +110,45 @@ export const sidebarConfig: SidebarMenuSection[] = [
   {
     title: 'ADMIN',
     items: [
+      {
+        id: 'admin-holidays',
+        label: 'Holidays',
+        icon: Globe,
+        href: '/settings/holidays',
+        roles: ['hr'],
+      },
+      {
+        id: 'admin-payroll',
+        label: 'Payroll',
+        icon: FileSpreadsheet,
+        href: '/dashboard/admin/payroll-reports',
+        roles: ['hr'],
+      },
+      {
+        id: 'admin-organization',
+        label: 'Organization',
+        icon: Building2,
+        href: '/dashboard/admin/organization',
+        roles: ['hr'],
+      },
+      {
+        id: 'admin-gallery',
+        label: 'Gallery',
+        icon: ImageIcon,
+        href: '/dashboard/admin/gallery',
+        roles: ['hr'],
+      },
+    ],
+  },
+  {
+    title: 'SETTINGS',
+    items: [
+      {
+        id: 'settings',
+        label: 'Settings',
+        icon: Settings,
+        href: '/dashboard/settings',
+      },
       {
         id: 'admin-shifts',
         label: 'Shifts',
@@ -174,64 +229,11 @@ export const sidebarConfig: SidebarMenuSection[] = [
         ],
       },
       {
-        id: 'admin-leave-requests',
-        label: 'Leave Requests',
-        icon: FileCheck,
-        href: '/dashboard/admin/leave-requests',
-        roles: ['hr'],
-      },
-      {
-        id: 'admin-regularization-requests',
-        label: 'Regularization Requests',
-        icon: ClipboardCheck,
-        href: '/dashboard/admin/regularization-requests',
-        roles: ['hr'],
-      },
-      {
-        id: 'admin-holidays',
-        label: 'Holidays',
-        icon: Globe,
-        href: '/settings/holidays',
-        roles: ['hr'],
-      },
-      {
-        id: 'admin-payroll-reports',
-        label: 'Payroll Reports',
-        icon: FileSpreadsheet,
-        href: '/dashboard/admin/payroll-reports',
-        roles: ['hr'],
-      },
-      {
-        id: 'admin-organization',
-        label: 'Organization',
-        icon: Building2,
-        href: '/dashboard/admin/organization',
-        roles: ['hr'],
-      },
-      {
         id: 'admin-onboarding',
         label: 'Employee Onboarding',
         icon: UserCheck,
         href: '/dashboard/admin/employee-setup',
         roles: ['hr'],
-      },
-      {
-        id: 'admin-gallery',
-        label: 'Gallery',
-        icon: ImageIcon,
-        href: '/dashboard/admin/gallery',
-        roles: ['hr'],
-      },
-    ],
-  },
-  {
-    title: 'SETTINGS',
-    items: [
-      {
-        id: 'settings',
-        label: 'Settings',
-        icon: Settings,
-        href: '/dashboard/settings',
       },
     ],
   },

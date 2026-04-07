@@ -114,7 +114,7 @@ export function RegularizationRequestsScreen() {
           <TabsTrigger value="pending" className="gap-1.5">
             Pending
             {pendingCount > 0 && (
-              <span className="inline-flex size-5 items-center justify-center rounded-full bg-orange-500 text-[10px] font-bold text-white">
+              <span className="inline-flex size-5 items-center justify-center rounded-full bg-blue-500 text-[10px] font-bold text-white">
                 {pendingCount}
               </span>
             )}
@@ -138,7 +138,7 @@ export function RegularizationRequestsScreen() {
               <CardContent>
                 {isLoading ? (
                   <div className="flex items-center justify-center py-12">
-                    <div className="border-muted-foreground size-8 animate-spin rounded-full border-4 border-t-orange-500" />
+                    <div className="border-muted-foreground size-8 animate-spin rounded-full border-4 border-t-blue-500" />
                   </div>
                 ) : requests.length === 0 ? (
                   <p className="text-muted-foreground py-8 text-center text-sm">

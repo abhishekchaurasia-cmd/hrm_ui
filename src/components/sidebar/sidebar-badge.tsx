@@ -12,7 +12,7 @@ export function SidebarBadge({ text, variant }: SidebarBadgeProps) {
     <span
       className={cn(
         'rounded px-1.5 py-0.5 text-[10px] leading-none font-semibold text-white',
-        variant === 'hot' && 'bg-orange-500',
+        variant === 'hot' && 'bg-blue-500',
         variant === 'new' && 'bg-red-500'
       )}
     >

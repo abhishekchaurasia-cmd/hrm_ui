@@ -51,3 +51,22 @@ export async function getUpcomingBirthdays(): Promise<
   });
   return res.data as ApiResponse<UpcomingBirthday[]>;
 }
+
+export interface UpcomingAnniversary {
+  userId: string;
+  firstName: string;
+  lastName: string;
+  joiningDate: string;
+  yearsOfService: number;
+  department: string | null;
+}
+
+export async function getUpcomingAnniversaries(): Promise<
+  ApiResponse<UpcomingAnniversary[]>
+> {
+  const res = await service({
+    method: HttpMethod.GET,
+    url: '/api/v1/users/upcoming-anniversaries',
+  });
+  return res.data as ApiResponse<UpcomingAnniversary[]>;
+}

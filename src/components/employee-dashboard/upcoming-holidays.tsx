@@ -121,8 +121,8 @@ export function UpcomingHolidays({ limit = 5 }: UpcomingHolidaysProps) {
     <Card className="h-full">
       <CardContent className="flex h-full flex-col p-5">
         <div className="mb-4 flex items-center gap-2">
-          <div className="flex size-8 items-center justify-center rounded-lg bg-orange-100">
-            <Gift className="size-4 text-orange-600" />
+          <div className="flex size-8 items-center justify-center rounded-lg bg-blue-100">
+            <Gift className="size-4 text-blue-600" />
           </div>
           <div className="flex-1">
             <h3 className="font-semibold">Upcoming Holidays</h3>

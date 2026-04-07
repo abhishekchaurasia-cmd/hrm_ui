@@ -3,6 +3,8 @@ export { AttendanceFollowupSection } from './attendance-followup-section';
 export { AttendanceInsightCard } from './attendance-insight-card';
 export { AttendanceStatus } from './attendance-status';
 export { AttendanceSummary } from './attendance-summary';
+export { CelebrationsEvents } from './celebrations-events';
+export { HrGreetingBanner } from './hr-greeting-banner';
 export { LateArrivalRow } from './late-arrival-row';
 export { LateArrivalsAlerts } from './late-arrivals-alerts';
 export { OverviewStatCard } from './overview-stat-card';

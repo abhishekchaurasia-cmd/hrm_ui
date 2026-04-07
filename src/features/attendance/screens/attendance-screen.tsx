@@ -629,7 +629,7 @@ function EmployeeAttendanceView({
               </div>
               <div className="bg-muted h-2 rounded-full">
                 <div
-                  className="h-2 rounded-full bg-orange-500 transition-all"
+                  className="h-2 rounded-full bg-blue-500 transition-all"
                   style={{ width: `${progressPercent}%` }}
                 />
               </div>
@@ -698,9 +698,7 @@ function EmployeeAttendanceView({
           <Card>
             <CardContent className="py-4">
               <p className="text-muted-foreground text-xs">Late</p>
-              <p className="text-2xl font-bold text-orange-600">
-                {summary.late}
-              </p>
+              <p className="text-2xl font-bold text-blue-600">{summary.late}</p>
             </CardContent>
           </Card>
           <Card>
@@ -843,7 +841,7 @@ function EmployeeAttendanceView({
                               asChild
                               size="sm"
                               variant="ghost"
-                              className="h-7 gap-1 px-2 text-xs text-orange-500 hover:text-orange-400"
+                              className="h-7 gap-1 px-2 text-xs text-blue-500 hover:text-blue-400"
                             >
                               <Link
                                 href={`/dashboard/regularization?date=${record.workDate}`}

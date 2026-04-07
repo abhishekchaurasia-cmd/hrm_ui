@@ -78,8 +78,8 @@ export function FeaturesSection() {
               className="bg-card border-border/50 group border transition-shadow hover:shadow-lg"
             >
               <CardHeader className="pb-3">
-                <div className="mb-2 flex size-11 items-center justify-center rounded-lg bg-orange-500/10">
-                  <Icon className="size-5 text-orange-500" />
+                <div className="mb-2 flex size-11 items-center justify-center rounded-lg bg-blue-500/10">
+                  <Icon className="size-5 text-blue-500" />
                 </div>
                 <CardTitle className="text-foreground text-lg">
                   {title}

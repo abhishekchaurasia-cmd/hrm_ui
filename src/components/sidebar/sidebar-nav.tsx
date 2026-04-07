@@ -48,6 +48,7 @@ export function SidebarNav({
                   key={item.id}
                   item={item}
                   isCollapsed={isCollapsed}
+                  currentRole={currentRole}
                 />
               ))}
           </div>

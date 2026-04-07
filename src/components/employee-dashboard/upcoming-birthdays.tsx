@@ -44,7 +44,7 @@ function getDaysUntilBirthday(dateStr: string): number {
 function BirthdayBadge({ daysUntil }: { daysUntil: number }) {
   if (daysUntil === 0) {
     return (
-      <Badge className="shrink-0 gap-1 bg-orange-500 text-[10px] text-white hover:bg-orange-600">
+      <Badge className="shrink-0 gap-1 bg-blue-500 text-[10px] text-white hover:bg-blue-600">
         <PartyPopper className="size-3" />
         Today!
       </Badge>
@@ -136,7 +136,7 @@ export function UpcomingBirthdays() {
                   key={b.userId}
                   className={`flex items-center gap-3 rounded-lg p-2.5 transition-colors ${
                     isCurrentDay
-                      ? 'bg-orange-50 ring-1 ring-orange-200'
+                      ? 'bg-blue-50 ring-1 ring-blue-200'
                       : 'hover:bg-muted/50'
                   }`}
                 >

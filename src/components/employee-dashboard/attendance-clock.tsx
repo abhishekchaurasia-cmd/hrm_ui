@@ -260,7 +260,7 @@ export function AttendanceClock() {
         </div>
 
         <p className="mt-3 flex items-center gap-1.5 text-sm">
-          <Flame className="size-3.5 text-orange-400" />
+          <Flame className="size-3.5 text-blue-400" />
           Punch In at {punchInTime}
         </p>
 
@@ -271,7 +271,7 @@ export function AttendanceClock() {
         )}
 
         <Button
-          className="mt-4 w-full bg-orange-500 text-white hover:bg-orange-600"
+          className="mt-4 w-full bg-blue-500 text-white hover:bg-blue-600"
           onClick={() => void actionHandler()}
           disabled={isActionDisabled}
         >
