@@ -32,8 +32,9 @@ import type { Shift } from '@/types/shift';
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 function formatWeeklyOffs(shift: Shift): string {
-  if (!shift.weeklyOffs || shift.weeklyOffs.length === 0) return 'None';
-  return shift.weeklyOffs.map(wo => DAY_NAMES[wo.dayOfWeek]).join(', ');
+  const offs = Array.isArray(shift.weeklyOffs) ? shift.weeklyOffs : [];
+  if (offs.length === 0) return 'None';
+  return offs.map(wo => DAY_NAMES[wo.dayOfWeek]).join(', ');
 }
 
 export function ShiftListScreen() {
@@ -54,9 +55,9 @@ export function ShiftListScreen() {
     try {
       const res = await getShifts({ page, limit });
       const data = res.data as unknown as PaginatedResponse<Shift>;
-      setShifts(data.items);
-      setTotal(data.total);
-      setTotalPages(data.totalPages);
+      setShifts(Array.isArray(data?.items) ? data.items : []);
+      setTotal(data?.total ?? 0);
+      setTotalPages(data?.totalPages ?? 1);
     } catch {
       setError('Failed to load shifts');
     } finally {

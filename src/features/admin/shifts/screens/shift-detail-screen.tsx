@@ -65,17 +65,18 @@ export function ShiftDetailScreen({ shiftId }: ShiftDetailScreenProps) {
       const s = shiftRes.data;
       setShift(s);
       setForm({
-        name: s.name,
-        code: s.code,
-        startTime: s.startTime.slice(0, 5),
-        endTime: s.endTime.slice(0, 5),
-        breakDurationMinutes: s.breakDurationMinutes,
-        workHoursPerDay: Number(s.workHoursPerDay),
-        isFlexible: s.isFlexible,
-        graceMinutes: s.graceMinutes,
-        isDefault: s.isDefault,
+        name: s.name ?? '',
+        code: s.code ?? '',
+        startTime: s.startTime ? s.startTime.slice(0, 5) : '',
+        endTime: s.endTime ? s.endTime.slice(0, 5) : '',
+        breakDurationMinutes: s.breakDurationMinutes ?? 0,
+        workHoursPerDay: Number(s.workHoursPerDay) || 0,
+        isFlexible: s.isFlexible ?? false,
+        graceMinutes: s.graceMinutes ?? 0,
+        isDefault: s.isDefault ?? false,
       });
-      setWeeklyOffDays(new Set(s.weeklyOffs?.map(wo => wo.dayOfWeek) ?? []));
+      const offs = Array.isArray(s.weeklyOffs) ? s.weeklyOffs : [];
+      setWeeklyOffDays(new Set(offs.map(wo => wo.dayOfWeek)));
       const raw = assignRes.data as unknown;
       setAssignments(
         Array.isArray(raw)
@@ -101,7 +102,17 @@ export function ShiftDetailScreen({ shiftId }: ShiftDetailScreenProps) {
     try {
       const res = await updateShift(shiftId, form);
       toast.success(res.message);
-      setShift(prev => (prev ? { ...prev, ...res.data } : prev));
+      setShift(prev => {
+        if (!prev) return prev;
+        const updated = res.data;
+        return {
+          ...prev,
+          ...updated,
+          weeklyOffs: Array.isArray(updated.weeklyOffs)
+            ? updated.weeklyOffs
+            : prev.weeklyOffs,
+        };
+      });
     } catch (err: unknown) {
       if (axios.isAxiosError(err) && err.response?.status === 409) {
         setErrors({ code: err.response.data?.message ?? 'Code conflict' });
