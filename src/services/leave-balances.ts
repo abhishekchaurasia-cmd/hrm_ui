@@ -3,6 +3,7 @@ import service, { HttpMethod } from './http';
 import type {
   AdjustLeaveBalanceDto,
   LeaveBalance,
+  LeaveBalanceOverviewData,
   LeaveTransaction,
 } from '@/types/leave';
 
@@ -36,6 +37,20 @@ export async function getLeaveBalances(params?: {
     params: params as Record<string, unknown>,
   });
   return res.data as ApiResponse<LeaveBalance[]>;
+}
+
+export async function getLeaveBalanceOverview(params?: {
+  year?: number;
+  search?: string;
+  page?: number;
+  limit?: number;
+}): Promise<ApiResponse<LeaveBalanceOverviewData>> {
+  const res = await service({
+    method: HttpMethod.GET,
+    url: '/api/v1/leave-balances/overview',
+    params: params as Record<string, unknown>,
+  });
+  return res.data as ApiResponse<LeaveBalanceOverviewData>;
 }
 
 export async function getEmployeeBalances(

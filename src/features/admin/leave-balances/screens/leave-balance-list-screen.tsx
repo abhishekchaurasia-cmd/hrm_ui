@@ -1,13 +1,12 @@
 'use client';
 
 import axios from 'axios';
-import { Wallet, SlidersHorizontal } from 'lucide-react';
+import { Wallet, SlidersHorizontal, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { toast } from 'sonner';
 
 import { EmployeeSelect } from '@/components/employee-select';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -20,7 +19,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Pagination, type PaginatedResponse } from '@/components/ui/pagination';
+import { Pagination } from '@/components/ui/pagination';
 import {
   Table,
   TableBody,
@@ -30,99 +29,156 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
-import { getLeaveBalances, adjustBalance } from '@/services/leave-balances';
+import {
+  getLeaveBalanceOverview,
+  adjustBalance,
+} from '@/services/leave-balances';
 
-import type { LeaveBalance } from '@/types/leave';
+import type {
+  EmployeeBalanceRow,
+  LeaveBalance,
+  LeaveTypeColumn,
+} from '@/types/leave';
 
 export function LeaveBalanceListScreen() {
   const router = useRouter();
-  const [balances, setBalances] = useState<LeaveBalance[]>([]);
+  const [employees, setEmployees] = useState<EmployeeBalanceRow[]>([]);
+  const [leaveTypes, setLeaveTypes] = useState<LeaveTypeColumn[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filterYear, setFilterYear] = useState<string>(
     String(new Date().getFullYear())
   );
   const [filterUserId, setFilterUserId] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
 
-  const [showAdjust, setShowAdjust] = useState(false);
-  const [adjustTarget, setAdjustTarget] = useState<LeaveBalance | null>(null);
-  const [adjustDays, setAdjustDays] = useState('');
-  const [adjustRemarks, setAdjustRemarks] = useState('');
-  const [isAdjusting, setIsAdjusting] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
+  const [editTarget, setEditTarget] = useState<EmployeeBalanceRow | null>(null);
+  const [editValues, setEditValues] = useState<Record<string, string>>({});
+  const [editRemarks, setEditRemarks] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
-  const fetchBalances = useCallback(async () => {
+  const fetchOverview = useCallback(async () => {
     setIsLoading(true);
     try {
-      const params: Record<string, unknown> = {};
+      const params: Record<string, unknown> = { page, limit };
       if (filterYear) params.year = parseInt(filterYear, 10);
-      if (filterUserId) params.userId = filterUserId;
-      params.page = page;
-      params.limit = limit;
-      const res = await getLeaveBalances(
+      if (filterUserId) params.search = undefined;
+      if (searchTerm.trim()) params.search = searchTerm.trim();
+      if (filterUserId) {
+        params.search = undefined;
+      }
+      const res = await getLeaveBalanceOverview(
         params as {
-          userId?: string;
-          planId?: string;
           year?: number;
+          search?: string;
           page?: number;
           limit?: number;
         }
       );
-      const payload = res.data as unknown as PaginatedResponse<LeaveBalance>;
-      setBalances(payload.items);
-      setTotal(payload.total);
-      setTotalPages(payload.totalPages);
+      const overview = res.data;
+      setLeaveTypes(overview.leaveTypes);
+      setEmployees(overview.employees.items);
+      setTotal(overview.employees.total);
+      setTotalPages(overview.employees.totalPages);
     } catch {
       toast.error('Failed to load balances');
     } finally {
       setIsLoading(false);
     }
-  }, [filterYear, filterUserId, page, limit]);
+  }, [filterYear, filterUserId, searchTerm, page, limit]);
 
   useEffect(() => {
     setPage(1);
-  }, [filterYear, filterUserId]);
+  }, [filterYear, filterUserId, searchTerm]);
 
   useEffect(() => {
-    void fetchBalances();
-  }, [fetchBalances]);
+    void fetchOverview();
+  }, [fetchOverview]);
 
-  const handleAdjust = async () => {
-    if (!adjustTarget || !adjustDays) {
-      toast.error('Days amount is required');
-      return;
+  const filteredEmployees = useMemo(() => {
+    if (!filterUserId) return employees;
+    return employees.filter(e => e.userId === filterUserId);
+  }, [employees, filterUserId]);
+
+  const getBalanceForType = (
+    row: EmployeeBalanceRow,
+    leaveTypeId: string
+  ): LeaveBalance | undefined => {
+    return row.balances.find(b => b.leaveTypeConfigId === leaveTypeId);
+  };
+
+  const openEditDialog = (row: EmployeeBalanceRow) => {
+    setEditTarget(row);
+    const values: Record<string, string> = {};
+    for (const b of row.balances) {
+      values[b.id] = String(Number(b.balance));
     }
-    setIsAdjusting(true);
+    setEditValues(values);
+    setEditRemarks('');
+    setShowEdit(true);
+  };
+
+  const handleSave = async () => {
+    if (!editTarget) return;
+    setIsSaving(true);
     try {
-      const res = await adjustBalance({
-        leaveBalanceId: adjustTarget.id,
-        days: parseFloat(adjustDays),
-        remarks: adjustRemarks || undefined,
-      });
-      toast.success(res.message);
-      setShowAdjust(false);
-      setAdjustTarget(null);
-      setAdjustDays('');
-      setAdjustRemarks('');
-      void fetchBalances();
+      const adjustments: Array<{ leaveBalanceId: string; days: number }> = [];
+      for (const b of editTarget.balances) {
+        const newVal = parseFloat(editValues[b.id] ?? '');
+        if (isNaN(newVal)) continue;
+        const currentBalance = Number(b.balance);
+        const delta = newVal - currentBalance;
+        if (Math.abs(delta) >= 0.1) {
+          adjustments.push({ leaveBalanceId: b.id, days: delta });
+        }
+      }
+
+      if (adjustments.length === 0) {
+        toast.info('No changes to save');
+        setShowEdit(false);
+        return;
+      }
+
+      const results = await Promise.allSettled(
+        adjustments.map(adj =>
+          adjustBalance({
+            leaveBalanceId: adj.leaveBalanceId,
+            days: adj.days,
+            remarks: editRemarks || undefined,
+          })
+        )
+      );
+
+      const failed = results.filter(r => r.status === 'rejected').length;
+      if (failed > 0) {
+        toast.error(`${failed} adjustment(s) failed`);
+      } else {
+        toast.success('Leave balances updated');
+      }
+
+      setShowEdit(false);
+      setEditTarget(null);
+      void fetchOverview();
     } catch (err: unknown) {
       const message = axios.isAxiosError(err)
-        ? (err.response?.data?.message ?? 'Failed to adjust balance')
-        : 'Failed to adjust balance';
+        ? (err.response?.data?.message ?? 'Failed to save changes')
+        : 'Failed to save changes';
       toast.error(message);
     } finally {
-      setIsAdjusting(false);
+      setIsSaving(false);
     }
   };
 
-  const openAdjustDialog = (balance: LeaveBalance) => {
-    setAdjustTarget(balance);
-    setAdjustDays('');
-    setAdjustRemarks('');
-    setShowAdjust(true);
-  };
+  const totalAvailable = editTarget
+    ? editTarget.balances.reduce((sum, b) => sum + Number(b.balance), 0)
+    : 0;
+  const totalAllocated = editTarget
+    ? editTarget.balances.reduce((sum, b) => sum + Number(b.allocated), 0)
+    : 0;
 
   return (
     <div className="flex flex-col gap-5">
@@ -171,6 +227,26 @@ export function LeaveBalanceListScreen() {
                 className="w-72"
               />
             </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Search</Label>
+              <div className="relative">
+                <Input
+                  className="w-60 pr-8"
+                  placeholder="Search by name..."
+                  value={searchTerm}
+                  onChange={e => setSearchTerm(e.target.value)}
+                />
+                {searchTerm && (
+                  <button
+                    type="button"
+                    className="text-muted-foreground hover:text-foreground absolute top-1/2 right-2 -translate-y-1/2"
+                    onClick={() => setSearchTerm('')}
+                  >
+                    <X className="size-3.5" />
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -187,151 +263,178 @@ export function LeaveBalanceListScreen() {
             <p className="text-muted-foreground py-8 text-center text-sm">
               Loading balances...
             </p>
-          ) : balances.length === 0 ? (
+          ) : filteredEmployees.length === 0 ? (
             <p className="text-muted-foreground py-8 text-center text-sm">
               No balance records found. Initialize balances from a leave plan.
             </p>
           ) : (
             <>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Employee</TableHead>
-                    <TableHead>Leave Type</TableHead>
-                    <TableHead className="text-right">Allocated</TableHead>
-                    <TableHead className="text-right">Used</TableHead>
-                    <TableHead className="text-right">Carried</TableHead>
-                    <TableHead className="text-right">Adjusted</TableHead>
-                    <TableHead className="text-right">Balance</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {balances.map(b => (
-                    <TableRow key={b.id}>
-                      <TableCell>
-                        {b.user ? (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="min-w-[200px]">Employee</TableHead>
+                      {leaveTypes.map(lt => (
+                        <TableHead key={lt.id} className="text-center">
+                          <div>
+                            <p>{lt.name}</p>
+                            <p className="text-muted-foreground text-[10px] font-normal uppercase">
+                              {lt.code}
+                            </p>
+                          </div>
+                        </TableHead>
+                      ))}
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredEmployees.map(row => (
+                      <TableRow key={row.userId}>
+                        <TableCell>
                           <button
                             type="button"
                             className="text-left hover:underline"
                             onClick={() =>
                               router.push(
-                                `/dashboard/admin/leave-balances/employee/${b.userId}`
+                                `/dashboard/admin/leave-balances/employee/${row.userId}`
                               )
                             }
                           >
                             <p className="font-medium">
-                              {b.user.firstName} {b.user.lastName}
+                              {row.user.firstName} {row.user.lastName}
                             </p>
                             <p className="text-muted-foreground text-xs">
-                              {b.user.email}
+                              {row.user.email}
                             </p>
                           </button>
-                        ) : (
-                          <span className="text-xs">{b.userId}</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <p className="font-medium">
-                            {b.leaveTypeConfig?.name ?? '—'}
-                          </p>
-                          {b.leaveTypeConfig?.code && (
-                            <code className="text-muted-foreground text-xs">
-                              {b.leaveTypeConfig.code}
-                            </code>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {Number(b.allocated)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {Number(b.used)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {Number(b.carriedForward)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {Number(b.adjusted) !== 0 ? (
-                          <Badge
-                            variant={
-                              Number(b.adjusted) > 0 ? 'success' : 'warning'
-                            }
+                        </TableCell>
+                        {leaveTypes.map(lt => {
+                          const bal = getBalanceForType(row, lt.id);
+                          if (!bal) {
+                            return (
+                              <TableCell
+                                key={lt.id}
+                                className="text-muted-foreground text-center"
+                              >
+                                -
+                              </TableCell>
+                            );
+                          }
+                          return (
+                            <TableCell key={lt.id} className="text-center">
+                              <span className="font-medium">
+                                {Number(bal.used)}/{Number(bal.allocated)}
+                              </span>
+                              <span className="text-muted-foreground text-xs">
+                                {' '}
+                                days
+                              </span>
+                            </TableCell>
+                          );
+                        })}
+                        <TableCell className="text-right">
+                          <Button
+                            variant="ghost"
+                            size="xs"
+                            onClick={() => openEditDialog(row)}
                           >
-                            {Number(b.adjusted) > 0 ? '+' : ''}
-                            {Number(b.adjusted)}
-                          </Badge>
-                        ) : (
-                          '0'
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right font-semibold">
-                        {Number(b.balance)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          variant="ghost"
-                          size="xs"
-                          onClick={() => openAdjustDialog(b)}
-                        >
-                          Adjust
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-              <Pagination
-                page={page}
-                totalPages={totalPages}
-                total={total}
-                limit={limit}
-                onPageChange={setPage}
-                onLimitChange={setLimit}
-              />
+                            Adjust
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+              {!filterUserId && (
+                <Pagination
+                  page={page}
+                  totalPages={totalPages}
+                  total={total}
+                  limit={limit}
+                  onPageChange={setPage}
+                  onLimitChange={setLimit}
+                />
+              )}
             </>
           )}
         </CardContent>
       </Card>
 
-      <Dialog open={showAdjust} onOpenChange={setShowAdjust}>
-        <DialogContent>
+      <Dialog open={showEdit} onOpenChange={setShowEdit}>
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Adjust Leave Balance</DialogTitle>
+            <DialogTitle>Edit Leave Balance</DialogTitle>
             <DialogDescription>
-              {adjustTarget &&
-                `Adjusting balance for ${
-                  adjustTarget.leaveTypeConfig?.name ?? 'leave type'
-                }. Use positive values to credit, negative to debit.`}
+              {editTarget && (
+                <span className="flex flex-col gap-0.5">
+                  <span className="text-foreground font-medium">
+                    {editTarget.user.firstName} {editTarget.user.lastName}
+                  </span>
+                  <span>{editTarget.user.email}</span>
+                </span>
+              )}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Days (+ to credit, - to debit)</Label>
-              <Input
-                type="number"
-                step="0.5"
-                placeholder="e.g. 2 or -1"
-                value={adjustDays}
-                onChange={e => setAdjustDays(e.target.value)}
-              />
+
+          {editTarget && (
+            <div className="space-y-5">
+              <div className="bg-muted/50 flex items-center justify-between rounded-lg px-4 py-3">
+                <span className="text-sm font-medium">
+                  Total available balance
+                </span>
+                <span className="text-lg font-bold">
+                  {totalAvailable} / {totalAllocated} days
+                </span>
+              </div>
+
+              <div className="space-y-3">
+                {editTarget.balances.map(b => (
+                  <div key={b.id} className="space-y-1.5">
+                    <Label className="text-sm font-medium">
+                      {b.leaveTypeConfig?.name ?? 'Unknown'}
+                    </Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        step="0.5"
+                        className="w-24"
+                        value={editValues[b.id] ?? ''}
+                        onChange={e =>
+                          setEditValues(prev => ({
+                            ...prev,
+                            [b.id]: e.target.value,
+                          }))
+                        }
+                      />
+                      <span className="text-muted-foreground text-sm">
+                        days
+                      </span>
+                      <span className="text-muted-foreground text-sm">
+                        / {Number(b.allocated)} days
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">Comment</Label>
+                <Textarea
+                  placeholder="Add Comment"
+                  value={editRemarks}
+                  onChange={e => setEditRemarks(e.target.value)}
+                />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label>Remarks (optional)</Label>
-              <Textarea
-                placeholder="Reason for adjustment"
-                value={adjustRemarks}
-                onChange={e => setAdjustRemarks(e.target.value)}
-              />
-            </div>
-          </div>
+          )}
+
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowAdjust(false)}>
+            <Button variant="outline" onClick={() => setShowEdit(false)}>
               Cancel
             </Button>
-            <Button onClick={handleAdjust} disabled={isAdjusting}>
-              {isAdjusting ? 'Adjusting...' : 'Apply Adjustment'}
+            <Button onClick={handleSave} disabled={isSaving}>
+              {isSaving ? 'Saving...' : 'Save'}
             </Button>
           </DialogFooter>
         </DialogContent>

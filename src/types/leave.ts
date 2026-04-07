@@ -111,6 +111,29 @@ export interface LeaveBalance {
   updatedAt: string;
 }
 
+export interface LeaveTypeColumn {
+  id: string;
+  name: string;
+  code: string;
+}
+
+export interface EmployeeBalanceRow {
+  userId: string;
+  user: { id: string; firstName: string; lastName: string; email: string };
+  balances: LeaveBalance[];
+}
+
+export interface LeaveBalanceOverviewData {
+  leaveTypes: LeaveTypeColumn[];
+  employees: {
+    items: EmployeeBalanceRow[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
 export interface AdjustLeaveBalanceDto {
   leaveBalanceId: string;
   days: number;
