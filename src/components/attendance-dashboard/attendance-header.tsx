@@ -43,11 +43,14 @@ export function AttendanceHeader({
         </Button>
         {showApplyLeave && (
           <Button
+            asChild
             size="sm"
             className="gap-1.5 bg-orange-500 text-white hover:bg-orange-600"
           >
-            <Plus className="size-3.5" />
-            Apply Leave
+            <Link href="/dashboard/leave?apply=true">
+              <Plus className="size-3.5" />
+              Apply Leave
+            </Link>
           </Button>
         )}
       </div>

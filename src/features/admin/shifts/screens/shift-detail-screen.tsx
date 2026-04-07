@@ -76,7 +76,14 @@ export function ShiftDetailScreen({ shiftId }: ShiftDetailScreenProps) {
         isDefault: s.isDefault,
       });
       setWeeklyOffDays(new Set(s.weeklyOffs?.map(wo => wo.dayOfWeek) ?? []));
-      setAssignments(assignRes.data);
+      const raw = assignRes.data as unknown;
+      setAssignments(
+        Array.isArray(raw)
+          ? raw
+          : Array.isArray((raw as Record<string, unknown>)?.items)
+            ? ((raw as Record<string, unknown>).items as ShiftAssignment[])
+            : []
+      );
     } catch {
       toast.error('Failed to load shift details');
     } finally {

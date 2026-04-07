@@ -2,8 +2,9 @@
 
 import axios from 'axios';
 import { CalendarDays, PlusCircle, Send, XCircle } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 import { Badge } from '@/components/ui/badge';
@@ -100,8 +101,11 @@ function BalanceProgress({
 
 export function LeaveScreen() {
   const { data: session } = useSession();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const isHrUser = session?.user?.role === 'hr';
   const currentYear = new Date().getFullYear();
+  const autoApplyTriggered = useRef(false);
 
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [balances, setBalances] = useState<LeaveBalance[]>([]);
@@ -201,6 +205,19 @@ export function LeaveScreen() {
     void fetchData();
   }, [fetchData]);
 
+  useEffect(() => {
+    if (
+      searchParams.get('apply') === 'true' &&
+      !isLoading &&
+      !autoApplyTriggered.current
+    ) {
+      autoApplyTriggered.current = true;
+      void openApplyDialog();
+      router.replace('/dashboard/leave');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, isLoading]);
+
   const openApplyDialog = async () => {
     setShowApply(true);
     if (availableTypes.length === 0) {
@@ -214,7 +231,11 @@ export function LeaveScreen() {
   };
 
   const handleApply = async () => {
-    if (!form.leaveTypeConfigId || !form.startDate || !form.endDate) {
+    if (
+      !form.leaveTypeConfigId ||
+      !form.startDate ||
+      (!form.isHalfDay && !form.endDate)
+    ) {
       toast.error('Please select a leave type and enter dates');
       return;
     }
@@ -716,6 +737,7 @@ export function LeaveScreen() {
                       ...p,
                       isHalfDay: true,
                       halfDayType: 'first_half',
+                      endDate: p.startDate,
                     }))
                   }
                   className={`rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
@@ -766,9 +788,14 @@ export function LeaveScreen() {
                 <Input
                   type="date"
                   value={form.startDate}
-                  onChange={e =>
-                    setForm(p => ({ ...p, startDate: e.target.value }))
-                  }
+                  onChange={e => {
+                    const val = e.target.value;
+                    setForm(p => ({
+                      ...p,
+                      startDate: val,
+                      ...(p.isHalfDay ? { endDate: val } : {}),
+                    }));
+                  }}
                 />
               </div>
               {!form.isHalfDay && (

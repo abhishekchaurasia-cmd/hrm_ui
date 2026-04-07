@@ -2,6 +2,7 @@
 
 import axios from 'axios';
 import { Clock, XCircle } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
@@ -62,15 +63,17 @@ function formatTime(dateString: string | null): string {
 
 export function RegularizationScreen() {
   const { data: session } = useSession();
+  const searchParams = useSearchParams();
+  const prefillDate = searchParams.get('date') ?? undefined;
 
   if (session?.user?.role === 'hr') {
     return <RegularizationRequestsScreen />;
   }
 
-  return <EmployeeRegularizationView />;
+  return <EmployeeRegularizationView prefillDate={prefillDate} />;
 }
 
-function EmployeeRegularizationView() {
+function EmployeeRegularizationView({ prefillDate }: { prefillDate?: string }) {
   const [requests, setRequests] = useState<RegularizationRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -141,7 +144,11 @@ function EmployeeRegularizationView() {
             Request corrections to your attendance records.
           </p>
         </div>
-        <CreateRegularizationDialog onSuccess={() => void fetchRequests()} />
+        <CreateRegularizationDialog
+          onSuccess={() => void fetchRequests()}
+          prefillDate={prefillDate}
+          autoOpen={!!prefillDate}
+        />
       </div>
 
       <Tabs

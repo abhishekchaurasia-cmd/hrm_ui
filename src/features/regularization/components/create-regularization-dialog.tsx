@@ -40,6 +40,7 @@ import type {
 interface CreateRegularizationDialogProps {
   onSuccess: () => void;
   prefillDate?: string;
+  autoOpen?: boolean;
 }
 
 const REQUEST_TYPES: RegularizationRequestType[] = [
@@ -53,8 +54,10 @@ const REQUEST_TYPES: RegularizationRequestType[] = [
 export function CreateRegularizationDialog({
   onSuccess,
   prefillDate,
+  autoOpen = false,
 }: CreateRegularizationDialogProps) {
   const [open, setOpen] = useState(false);
+  const [didAutoOpen, setDidAutoOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [remaining, setRemaining] = useState<RemainingEntriesInfo | null>(null);
 
@@ -82,6 +85,13 @@ export function CreateRegularizationDialog({
   useEffect(() => {
     if (prefillDate) setRequestDate(prefillDate);
   }, [prefillDate]);
+
+  useEffect(() => {
+    if (autoOpen && !didAutoOpen) {
+      setOpen(true);
+      setDidAutoOpen(true);
+    }
+  }, [autoOpen, didAutoOpen]);
 
   const resetForm = () => {
     setRequestDate(prefillDate ?? '');
